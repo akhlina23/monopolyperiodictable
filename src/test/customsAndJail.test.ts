@@ -14,6 +14,10 @@ import {
   payJailBailOrCard,
   resetMatchState,
   resolveLandedTileEffects,
+  resolveQuizResult,
+  resolveStudyCaseResult,
+  resolveTileLanding,
+  sendPlayerToJail,
 } from '../engine/gameActions';
 import {
   getPieceWorldCoordinates,
@@ -516,11 +520,119 @@ describe('V2 Research Edition: Jail Release Fee 20,000 KK & Save Migration', () 
       state.teams[0].balanceKK - DEFAULT_JAIL_BAIL_KK
     );
 
-    let movedToCustoms = adminMoveTeam(bailed.state, 'team_2', customsIdx);
-    movedToCustoms = { ...movedToCustoms, activeTeamIndex: 1, phase: 'TURN_START' };
-    const rollAway = applyDiceMove(movedToCustoms, 2, 2);
+    const movedToCustoms = adminMoveTeam(bailed.state, 'team_2', customsIdx);
+    expect(movedToCustoms.teams[1].position).toBe(jailIdx);
+    expect(movedToCustoms.teams[1].isInJail).toBe(true);
+    expect(movedToCustoms.teams[1].jailStatus).toBe('detained');
+
+    let movedToNeutral = adminMoveTeam(bailed.state, 'team_2', customsIdx + 1);
+    movedToNeutral = { ...movedToNeutral, activeTeamIndex: 1, phase: 'TURN_START' };
+    const rollAway = applyDiceMove(movedToNeutral, 2, 2);
     expect(rollAway.ok).toBe(true);
     expect(rollAway.customsTriggered).toBe(false);
-    expect(rollAway.state.teams[1].position).toBe(customsIdx + 4);
+    expect(rollAway.state.teams[1].position).toBe(customsIdx + 5);
+  });
+
+  it('TEST 9: sendPlayerToJail atomically moves pawn position to Jail tile #33 across Admin toggle and Study Case rejection', () => {
+    const jailIdx = JAIL_TILE!.pathIndex;
+    let state = createInitialGameState(createDefaultTeams(2));
+    state = {
+      ...state,
+      teams: state.teams.map((t, idx) => (idx === 0 ? { ...t, position: 15 } : t)),
+    };
+
+    const adminJailed = sendPlayerToJail(state, 'team_1', {
+      eventType: 'ADMIN_SENT_TO_JAIL',
+      description: 'Tim Hidrogen dikirim ke Penjara oleh Admin.',
+    });
+    expect(adminJailed.teams[0].position).toBe(jailIdx);
+    expect(adminJailed.teams[0].isInJail).toBe(true);
+    expect(adminJailed.teams[0].jailStatus).toBe('detained');
+    expect(adminJailed.teams[0].jailTurns).toBe(
+      adminJailed.economyConfig.educationalRewards.jailDurationTurns
+    );
+
+    let caseState = createInitialGameState(createDefaultTeams(2));
+    caseState = {
+      ...caseState,
+      phase: 'STUDY_CASE_ACTIVE',
+      activeDrawEventId: 'draw_case_test',
+      teams: caseState.teams.map((t, idx) => (idx === 0 ? { ...t, position: 22 } : t)),
+    };
+    const rejectedCase = resolveStudyCaseResult(caseState, false);
+    expect(rejectedCase.ok).toBe(true);
+    expect(rejectedCase.state.teams[0].position).toBe(jailIdx);
+    expect(rejectedCase.state.teams[0].isInJail).toBe(true);
+    expect(rejectedCase.state.teams[0].jailStatus).toBe('detained');
+    expect(rejectedCase.state.teams[0].studyCaseFailures).toBe(1);
+    expect(rejectedCase.state.phase).toBe('TURN_END');
+  });
+
+  it('TEST 10: unified resolveTileLanding(admin) switches turn & triggers Quiz/StudyCase while keeping other tiles neutral and enforcing turn lock', () => {
+    const quizTile = BOARD_TILES.find((t) => t.tileType === 'quiz')!;
+    const caseTile = BOARD_TILES.find((t) => t.tileType === 'study_case')!;
+    const elementTile = BOARD_TILES.find((t) => t.tileType === 'element')!;
+
+    let state = createInitialGameState(createDefaultTeams(2));
+    expect(state.activeTeamIndex).toBe(0);
+
+    // Neutral element tile teleport should not change phase or turn
+    const neutralRes = resolveTileLanding(state, 'team_2', elementTile.pathIndex, 'admin');
+    expect(neutralRes.ok).toBe(true);
+    expect(neutralRes.state.teams[1].position).toBe(elementTile.pathIndex);
+    expect(neutralRes.state.phase).toBe('TURN_START');
+    expect(neutralRes.state.activeTeamIndex).toBe(0);
+
+    // Admin teleport to Quiz switches turn to moved player & opens QUIZ_ACTIVE
+    const quizRes = resolveTileLanding(neutralRes.state, 'team_2', quizTile.pathIndex, 'admin');
+    expect(quizRes.ok).toBe(true);
+    expect(quizRes.state.activeTeamIndex).toBe(1);
+    expect(quizRes.state.phase).toBe('QUIZ_ACTIVE');
+    expect(quizRes.state.activeDrawEventId).toBeTruthy();
+
+    // Turn lock prevents advancing turn while QUIZ_ACTIVE is unresolved
+    const lockedTurn = advanceToNextTurn(quizRes.state);
+    expect(lockedTurn.phase).toBe('QUIZ_ACTIVE');
+    expect(lockedTurn.activeTeamIndex).toBe(1);
+
+    // Resolving quiz unlocks turn progression
+    const withLoadedQuiz: GameState = {
+      ...quizRes.state,
+      activeQuiz: {
+        id: 'q_test',
+        drawEventId: quizRes.state.activeDrawEventId!,
+        topic: 'Test',
+        difficulty: 'mudah',
+        relatedElements: [1],
+        question: 'Simbol Hidrogen?',
+        options: [
+          { id: 'A', text: 'H' },
+          { id: 'B', text: 'He' },
+          { id: 'C', text: 'Li' },
+          { id: 'D', text: 'Be' },
+        ],
+        correctOptionId: 'A',
+        explanation: 'H adalah Hidrogen.',
+        fingerprint: 'fp',
+        provider: 'curated',
+        model: 'test',
+        createdAt: Date.now(),
+        verified: true,
+        timeLimitSeconds: 30,
+      },
+    };
+    const resolvedQuiz = resolveQuizResult(withLoadedQuiz, true);
+    expect(resolvedQuiz.state.phase).toBe('TURN_END');
+    const unlockedTurn = advanceToNextTurn(resolvedQuiz.state);
+    expect(unlockedTurn.phase).toBe('TURN_START');
+    expect(unlockedTurn.activeTeamIndex).toBe(0);
+
+    // Admin teleport to Study Case switches turn & opens STUDY_CASE_ACTIVE with turn lock
+    const caseRes = resolveTileLanding(unlockedTurn, 'team_2', caseTile.pathIndex, 'admin');
+    expect(caseRes.ok).toBe(true);
+    expect(caseRes.state.activeTeamIndex).toBe(1);
+    expect(caseRes.state.phase).toBe('STUDY_CASE_ACTIVE');
+    expect(caseRes.state.activeDrawEventId).toBeTruthy();
+    expect(advanceToNextTurn(caseRes.state).phase).toBe('STUDY_CASE_ACTIVE');
   });
 });

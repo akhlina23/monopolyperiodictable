@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GeneratedStudyCaseData, Team } from '../types/game';
 import {
   AlertOctagon,
@@ -9,6 +9,7 @@ import {
   RefreshCw,
   ThumbsDown,
   ThumbsUp,
+  X,
 } from 'lucide-react';
 
 interface StudyCaseModalProps {
@@ -18,6 +19,8 @@ interface StudyCaseModalProps {
   rewardKK: number;
   activeTeam: Team;
   otherTeams: Team[];
+  isMinimized?: boolean;
+  onMinimize?: () => void;
   onRetryGenerate: () => void;
   onCancelNoPenalty: () => void;
   onComplete: (isApproved: boolean) => void;
@@ -30,6 +33,8 @@ export const StudyCaseModal: React.FC<StudyCaseModalProps> = ({
   rewardKK,
   activeTeam,
   otherTeams,
+  isMinimized = false,
+  onMinimize,
   onRetryGenerate,
   onCancelNoPenalty,
   onComplete,
@@ -41,6 +46,13 @@ export const StudyCaseModal: React.FC<StudyCaseModalProps> = ({
     expectedAnswerOutline?: string[];
     learningExplanation?: string;
   } | null>(null);
+
+  useEffect(() => {
+    setVotes({});
+    setHasSubmitted(false);
+    setStage('presenting');
+    setRubricGuide(null);
+  }, [studyCase?.id]);
 
   const handleVote = (teamId: string, decision: 'approve' | 'reject') => {
     setVotes((prev) => ({ ...prev, [teamId]: decision }));
@@ -77,14 +89,20 @@ export const StudyCaseModal: React.FC<StudyCaseModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#09090D]/85 p-4">
+    <div
+      className={
+        isMinimized
+          ? 'hidden'
+          : 'fixed inset-0 z-50 flex items-center justify-center bg-[#09090D]/85 p-4'
+      }
+    >
       <div className="bg-[#171820] border border-[#7029FF]/60 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="bg-[#20222D] border-b border-white/10 p-4 flex justify-between items-center">
-          <div>
+        <div className="bg-[#20222D] border-b border-white/10 p-4 flex justify-between items-center gap-3">
+          <div className="min-w-0">
             <span className="font-mono text-[10px] uppercase tracking-wider text-[#D8B4FE] font-bold">
               Dynamic AI Study Case Challenge {studyCase?.provider ? `· ${studyCase.provider.toUpperCase()}` : ''}
             </span>
-            <h2 className="font-display text-base font-bold text-[#F4F1EA] mt-0.5">
+            <h2 className="font-display text-base font-bold text-[#F4F1EA] mt-0.5 truncate">
               {isLoading
                 ? 'Menyusun Studi Kasus Kimia AI...'
                 : errorMessage
@@ -92,7 +110,22 @@ export const StudyCaseModal: React.FC<StudyCaseModalProps> = ({
                 : studyCase?.title || 'Chemistry Study Case'}
             </h2>
           </div>
-          <HelpCircle className="w-5 h-5 text-[#7029FF]" />
+          <div className="flex items-center gap-2 shrink-0">
+            <HelpCircle className="w-5 h-5 text-[#7029FF] hidden sm:block" />
+            {onMinimize && (
+              <button
+                type="button"
+                disabled={hasSubmitted}
+                onClick={onMinimize}
+                aria-label="Tutup sementara untuk memeriksa papan"
+                title="Tutup sementara untuk melihat papan atau kartu unsur"
+                className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#09090D] hover:bg-[#2C2F3D] disabled:opacity-40 border border-white/15 text-[#F4F1EA] text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+              >
+                <span className="hidden sm:inline">Tutup Sementara</span>
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="p-5 flex flex-col gap-3.5 overflow-y-auto text-xs">

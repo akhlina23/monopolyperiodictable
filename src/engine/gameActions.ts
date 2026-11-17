@@ -370,6 +370,74 @@ export function applyDiceMove(state: GameState, d1: number, d2: number): ActionR
   return executeTrackStepMove(state, d1, d2);
 }
 
+export interface SendToJailOptions {
+  eventType?: 'CUSTOMS_SENT_TO_JAIL' | 'ADMIN_SENT_TO_JAIL' | 'CASE_REJECTED';
+  tileId?: string;
+  description?: string;
+  idempotentEventId?: string;
+  skipEventLog?: boolean;
+  phaseAfter?: GamePhase;
+  stateVersionOverride?: number;
+}
+
+/**
+ * Atomically relocates a team to the Penjara (Jail) tile AND marks them detained in jail.
+ * Shared across Bea Cukai (dice & admin), Admin Console Jail toggle, and Study Case rejection.
+ */
+export function sendPlayerToJail(
+  state: GameState,
+  teamId: string,
+  options: SendToJailOptions = {}
+): GameState {
+  const teamIdx = state.teams.findIndex((t) => t.id === teamId);
+  if (teamIdx === -1) return state;
+
+  const jailPathIndex = JAIL_TILE?.pathIndex ?? 33;
+  const jailDuration = state.economyConfig.educationalRewards.jailDurationTurns ?? 3;
+  const nextVersion = options.stateVersionOverride ?? state.stateVersion + 1;
+  const updatedTeams = state.teams.map((t) => ({ ...t }));
+  const team = updatedTeams[teamIdx];
+
+  const eventId =
+    options.idempotentEventId ??
+    `ev_jail_${state.gameId}_${nextVersion}_${team.id}`;
+  const alreadyRecorded = Boolean(
+    options.idempotentEventId &&
+      (team.lastJailEventId === eventId || state.events.some((ev) => ev.id === eventId))
+  );
+
+  team.position = jailPathIndex;
+  team.isInJail = true;
+  team.jailStatus = 'detained';
+  if (!alreadyRecorded) {
+    team.jailTurns = jailDuration;
+    team.lastJailEventId = eventId;
+  }
+
+  let events = state.events;
+  if (!options.skipEventLog && !alreadyRecorded) {
+    const eventType = options.eventType ?? 'CUSTOMS_SENT_TO_JAIL';
+    const description =
+      options.description ?? `${team.name} terkena Bea Cukai dan dikirim ke Penjara!`;
+    events = appendEvent(events, {
+      id: eventId,
+      teamId: team.id,
+      type: eventType,
+      tileId: options.tileId ?? CUSTOMS_TILE?.tileId ?? JAIL_TILE?.tileId,
+      description,
+    });
+  }
+
+  return {
+    ...state,
+    teams: updatedTeams,
+    events,
+    phase: options.phaseAfter ?? state.phase,
+    stateVersion: nextVersion,
+    updatedAt: Date.now(),
+  };
+}
+
 function executeTrackStepMove(state: GameState, d1: number, d2: number): ActionResult {
   const trackLen = TRACK_TILE_COUNT || 130;
   const startPathIndex = START_TILE?.pathIndex ?? 0;
@@ -412,40 +480,29 @@ function executeTrackStepMove(state: GameState, d1: number, d2: number): ActionR
       });
     }
 
-    const jailDuration = state.economyConfig.educationalRewards.jailDurationTurns ?? 3;
     const nextVersion = state.stateVersion + 1;
     const jailEventId = `ev_customs_${state.gameId}_${nextVersion}_${team.id}`;
-
-    team.position = jailPathIndex;
-    team.isInJail = true;
-    team.jailTurns = jailDuration;
-    team.jailStatus = 'detained';
-
-    if (team.lastJailEventId !== jailEventId && !events.some((ev) => ev.id === jailEventId)) {
-      team.lastJailEventId = jailEventId;
-      events = appendEvent(events, {
-        id: jailEventId,
-        teamId: team.id,
-        type: 'CUSTOMS_SENT_TO_JAIL',
-        tileId: CUSTOMS_TILE.tileId,
-        description: `${team.name} terkena Bea Cukai dan dikirim ke Penjara!`,
-      });
-    }
-
-    const visualPathSteps = [...stepsThroughCustoms, jailPathIndex];
-    const nextState: GameState = {
+    const preJailState: GameState = {
       ...state,
       teams: updatedTeams,
       lastDice: [d1, d2],
-      phase: 'RESOLVING_TILE',
       events,
-      stateVersion: nextVersion,
-      updatedAt: Date.now(),
     };
+
+    const jailedState = sendPlayerToJail(preJailState, team.id, {
+      eventType: 'CUSTOMS_SENT_TO_JAIL',
+      tileId: CUSTOMS_TILE.tileId,
+      description: `${team.name} terkena Bea Cukai dan dikirim ke Penjara!`,
+      idempotentEventId: jailEventId,
+      phaseAfter: 'RESOLVING_TILE',
+      stateVersionOverride: nextVersion,
+    });
+
+    const visualPathSteps = [...stepsThroughCustoms, jailPathIndex];
 
     return {
       ok: true,
-      state: nextState,
+      state: jailedState,
       landedTile: JAIL_TILE,
       pathSteps: visualPathSteps,
       crossedStart: crossedStartBeforeCustoms,
@@ -496,15 +553,178 @@ function executeTrackStepMove(state: GameState, d1: number, d2: number): ActionR
   };
 }
 
-export function resolveLandedTileEffects(state: GameState): ActionResult {
-  const updatedTeams = state.teams.map((t) => ({ ...t }));
-  const team = updatedTeams[state.activeTeamIndex];
-  const tile = TILES_BY_PATH_INDEX[team.position];
+/**
+ * Unified tile-landing side-effect resolver for both normal dice movement ('dice')
+ * and Admin Console token teleports ('admin').
+ * - 'dice': executes full board mechanics for every tile type.
+ * - 'admin': triggers Bea Cukai (Customs -> Jail), Quiz, and Study Case (switching active turn
+ *   to the moved player if needed), while leaving all other tiles neutral.
+ */
+export function resolveTileLanding(
+  state: GameState,
+  teamId: string,
+  targetTileIndex: number,
+  source: 'dice' | 'admin'
+): ActionResult {
+  const trackLen = TRACK_TILE_COUNT || 130;
+  const clampedPos = ((Math.round(targetTileIndex) % trackLen) + trackLen) % trackLen;
+  const teamIdx = state.teams.findIndex((t) => t.id === teamId);
+  if (teamIdx === -1) {
+    return { ok: false, error: 'Team not found.', state };
+  }
+
+  const tile = TILES_BY_PATH_INDEX[clampedPos];
+  if (!tile) {
+    return { ok: false, error: 'Invalid board tile position.', state };
+  }
+
+  const updatedTeams = state.teams.map((t, idx) =>
+    idx === teamIdx ? { ...t, position: clampedPos } : { ...t }
+  );
+  const team = updatedTeams[teamIdx];
   let events = [...state.events];
   const properties = { ...state.properties };
 
-  if (!tile) {
-    return { ok: false, error: 'Invalid board tile position.', state };
+  if (tile.tileType === 'customs') {
+    const jailPathIndex = JAIL_TILE?.pathIndex ?? 33;
+    const alreadyDetainedThisMove =
+      source === 'dice' &&
+      team.isInJail &&
+      Boolean(team.lastJailEventId && events.some((ev) => ev.id === team.lastJailEventId));
+
+    if (alreadyDetainedThisMove) {
+      const nextState = sendPlayerToJail(
+        { ...state, teams: updatedTeams },
+        team.id,
+        {
+          idempotentEventId: team.lastJailEventId ?? undefined,
+          skipEventLog: true,
+          phaseAfter: 'TURN_END',
+        }
+      );
+      return {
+        ok: true,
+        landedTile: JAIL_TILE ?? tile,
+        customsTriggered: false,
+        forcedJailPathIndex: jailPathIndex,
+        state: nextState,
+      };
+    }
+
+    const nextVersion = state.stateVersion + 1;
+    const isAdminCustoms = source === 'admin';
+    const nextPhaseAfter = isAdminCustoms
+      ? state.phase === 'QUIZ_ACTIVE' || state.phase === 'STUDY_CASE_ACTIVE' || state.phase === 'RESOLVING_TILE'
+        ? 'TURN_END'
+        : state.phase
+      : 'TURN_END';
+    const jailedState = sendPlayerToJail(
+      {
+        ...state,
+        teams: updatedTeams,
+        ...(isAdminCustoms && teamIdx === state.activeTeamIndex
+          ? { activeQuiz: null, activeStudyCase: null, activeDrawEventId: null, quizDeadline: null }
+          : {}),
+      },
+      team.id,
+      {
+        eventType: 'CUSTOMS_SENT_TO_JAIL',
+        tileId: tile.tileId,
+        description: isAdminCustoms
+          ? `${team.name} dipindahkan Admin ke Bea Cukai dan langsung dikirim ke Penjara!`
+          : `${team.name} terkena Bea Cukai dan dikirim ke Penjara!`,
+        idempotentEventId: `ev_customs_${state.gameId}_${nextVersion}_${team.id}`,
+        phaseAfter: nextPhaseAfter,
+        stateVersionOverride: nextVersion,
+      }
+    );
+    return {
+      ok: true,
+      landedTile: JAIL_TILE ?? tile,
+      customsTriggered: true,
+      forcedJailPathIndex: jailPathIndex,
+      state: jailedState,
+    };
+  }
+
+  if (tile.tileType === 'quiz') {
+    const nextVersion = state.stateVersion + 1;
+    const drawId = `draw_quiz_${state.gameId}_${nextVersion}_${tile.tileId}`;
+    const nextActiveIdx = source === 'admin' ? teamIdx : state.activeTeamIndex;
+    const nextEvents =
+      source === 'admin'
+        ? appendEvent(events, {
+            teamId: team.id,
+            type: 'TILE_VISITED',
+            tileId: tile.tileId,
+            description: `Admin memindahkan ${team.name} ke petak Kuis (${tile.title}).`,
+          })
+        : events;
+    return {
+      ok: true,
+      landedTile: tile,
+      state: {
+        ...state,
+        teams: updatedTeams,
+        activeTeamIndex: nextActiveIdx,
+        phase: 'QUIZ_ACTIVE',
+        activeQuiz: null,
+        activeStudyCase: null,
+        quizDeadline: null,
+        activeAuction: null,
+        activeDrawEventId: drawId,
+        events: nextEvents,
+        stateVersion: nextVersion,
+        updatedAt: Date.now(),
+      },
+    };
+  }
+
+  if (tile.tileType === 'study_case') {
+    const nextVersion = state.stateVersion + 1;
+    const drawId = `draw_case_${state.gameId}_${nextVersion}_${tile.tileId}`;
+    const nextActiveIdx = source === 'admin' ? teamIdx : state.activeTeamIndex;
+    const nextEvents =
+      source === 'admin'
+        ? appendEvent(events, {
+            teamId: team.id,
+            type: 'TILE_VISITED',
+            tileId: tile.tileId,
+            description: `Admin memindahkan ${team.name} ke petak Studi Kasus (${tile.title}).`,
+          })
+        : events;
+    return {
+      ok: true,
+      landedTile: tile,
+      state: {
+        ...state,
+        teams: updatedTeams,
+        activeTeamIndex: nextActiveIdx,
+        phase: 'STUDY_CASE_ACTIVE',
+        activeQuiz: null,
+        activeStudyCase: null,
+        quizDeadline: null,
+        activeAuction: null,
+        activeDrawEventId: drawId,
+        events: nextEvents,
+        stateVersion: nextVersion,
+        updatedAt: Date.now(),
+      },
+    };
+  }
+
+  // Keep all other tiles neutral on Admin Console teleports
+  if (source === 'admin') {
+    return {
+      ok: true,
+      landedTile: tile,
+      state: {
+        ...state,
+        teams: updatedTeams,
+        stateVersion: state.stateVersion + 1,
+        updatedAt: Date.now(),
+      },
+    };
   }
 
   if (tile.tileType === 'element' && tile.atomicNumber) {
@@ -630,7 +850,6 @@ export function resolveLandedTileEffects(state: GameState): ActionResult {
     }
 
     if (ownership.ownerTeamId === team.id) {
-      // Owner does not pay rent; optional zero maintenance per §11.11, configurable tax if set
       events = appendEvent(events, {
         teamId: team.id,
         type: 'MAIN_PROP_OWN_VISIT',
@@ -687,48 +906,8 @@ export function resolveLandedTileEffects(state: GameState): ActionResult {
     };
   }
 
-  if (tile.tileType === 'customs') {
-    const jailPathIndex = JAIL_TILE?.pathIndex ?? 33;
-    const jailDuration = state.economyConfig.educationalRewards.jailDurationTurns ?? 3;
-    const alreadyDetainedThisMove =
-      team.isInJail && Boolean(team.lastJailEventId && events.some((ev) => ev.id === team.lastJailEventId));
-
-    team.position = jailPathIndex;
-    team.isInJail = true;
-    team.jailStatus = 'detained';
-    if (!alreadyDetainedThisMove) {
-      team.jailTurns = jailDuration;
-      const jailEventId = `ev_customs_${state.gameId}_${state.stateVersion}_${team.id}`;
-      if (team.lastJailEventId !== jailEventId && !events.some((ev) => ev.id === jailEventId)) {
-        team.lastJailEventId = jailEventId;
-        events = appendEvent(events, {
-          id: jailEventId,
-          teamId: team.id,
-          type: 'CUSTOMS_SENT_TO_JAIL',
-          tileId: tile.tileId,
-          description: `${team.name} terkena Bea Cukai dan dikirim ke Penjara!`,
-        });
-      }
-    }
-    return {
-      ok: true,
-      landedTile: JAIL_TILE ?? tile,
-      customsTriggered: !alreadyDetainedThisMove,
-      forcedJailPathIndex: jailPathIndex,
-      state: {
-        ...state,
-        teams: updatedTeams,
-        phase: 'TURN_END',
-        events,
-        stateVersion: state.stateVersion + 1,
-        updatedAt: Date.now(),
-      },
-    };
-  }
-
   if (tile.tileType === 'jail') {
     if (team.isInJail || team.jailStatus === 'detained') {
-      // Forced detention already applied by Customs-to-Jail relocation; do not clear or duplicate.
       return {
         ok: true,
         landedTile: tile,
@@ -743,7 +922,6 @@ export function resolveLandedTileEffects(state: GameState): ActionResult {
       };
     }
 
-    // Voluntary visit / landing on Jail corner without Customs detention
     team.jailStatus = 'visiting';
     const visitEventId = `ev_jail_visit_${state.gameId}_${state.stateVersion}_${team.id}`;
     if (state.phase === 'RESOLVING_TILE' || !events.some((ev) => ev.id === visitEventId)) {
@@ -769,38 +947,6 @@ export function resolveLandedTileEffects(state: GameState): ActionResult {
     };
   }
 
-  if (tile.tileType === 'quiz') {
-    const drawId = `draw_quiz_${state.gameId}_${state.stateVersion}_${tile.tileId}`;
-    return {
-      ok: true,
-      landedTile: tile,
-      state: {
-        ...state,
-        teams: updatedTeams,
-        phase: 'QUIZ_ACTIVE',
-        activeDrawEventId: drawId,
-        stateVersion: state.stateVersion + 1,
-        updatedAt: Date.now(),
-      },
-    };
-  }
-
-  if (tile.tileType === 'study_case') {
-    const drawId = `draw_case_${state.gameId}_${state.stateVersion}_${tile.tileId}`;
-    return {
-      ok: true,
-      landedTile: tile,
-      state: {
-        ...state,
-        teams: updatedTeams,
-        phase: 'STUDY_CASE_ACTIVE',
-        activeDrawEventId: drawId,
-        stateVersion: state.stateVersion + 1,
-        updatedAt: Date.now(),
-      },
-    };
-  }
-
   events = appendEvent(events, {
     teamId: team.id,
     type: 'TILE_VISITED',
@@ -819,6 +965,14 @@ export function resolveLandedTileEffects(state: GameState): ActionResult {
       updatedAt: Date.now(),
     },
   };
+}
+
+export function resolveLandedTileEffects(state: GameState): ActionResult {
+  const activeTeam = state.teams[state.activeTeamIndex];
+  if (!activeTeam) {
+    return { ok: false, error: 'Active team not found.', state };
+  }
+  return resolveTileLanding(state, activeTeam.id, activeTeam.position, 'dice');
 }
 
 /**
@@ -1433,48 +1587,76 @@ export function resolveQuizResult(
 }
 
 export function resolveStudyCaseResult(state: GameState, isApproved: boolean): ActionResult {
-  const updatedTeams = state.teams.map((t) => ({ ...t }));
-  const team = updatedTeams[state.activeTeamIndex];
-
-  let delta = 0;
-  if (isApproved) {
-    delta = state.economyConfig.educationalRewards.studyCaseRewardKK;
-    team.balanceKK += delta;
-    team.jailCards += 1;
-  } else {
-    const jailDuration = state.economyConfig.educationalRewards.jailDurationTurns ?? 3;
-    team.studyCaseFailures += 1;
-    team.isInJail = true;
-    team.jailTurns = jailDuration;
-    team.jailStatus = 'detained';
-    if (team.studyCaseFailures >= 3) {
-      team.isBankrupt = true;
-      team.bankruptReason = 'Bangkrut karena gagal studi kasus kimia sebanyak 3 kali!';
-    }
+  const activeTeam = state.teams[state.activeTeamIndex];
+  if (!activeTeam) {
+    return { ok: false, error: 'Active team not found.', state };
   }
 
-  const events = appendEvent(state.events, {
-    teamId: team.id,
-    type: isApproved ? 'CASE_APPROVED' : 'CASE_REJECTED',
-    amountKK: isApproved ? delta : 0,
-    balanceAfterKK: team.balanceKK,
-    description: isApproved
-      ? `${team.name} lulus Studi Kasus (+${delta.toLocaleString('id-ID')} KK & +1 Kartu Bebas Penjara)!`
-      : `${team.name} ditolak pada Studi Kasus (${team.studyCaseFailures}/3 kegagalan) & masuk Penjara.`,
-  });
+  if (isApproved) {
+    const updatedTeams = state.teams.map((t) => ({ ...t }));
+    const team = updatedTeams[state.activeTeamIndex];
+    const delta = state.economyConfig.educationalRewards.studyCaseRewardKK;
+    team.balanceKK += delta;
+    team.jailCards += 1;
 
-  return {
-    ok: true,
-    state: {
+    const events = appendEvent(state.events, {
+      teamId: team.id,
+      type: 'CASE_APPROVED',
+      amountKK: delta,
+      balanceAfterKK: team.balanceKK,
+      description: `${team.name} lulus Studi Kasus (+${delta.toLocaleString('id-ID')} KK & +1 Kartu Bebas Penjara)!`,
+    });
+
+    return {
+      ok: true,
+      state: {
+        ...state,
+        teams: updatedTeams,
+        activeStudyCase: null,
+        activeDrawEventId: null,
+        phase: 'TURN_END',
+        events,
+        stateVersion: state.stateVersion + 1,
+        updatedAt: Date.now(),
+      },
+    };
+  }
+
+  const nextVersion = state.stateVersion + 1;
+  const updatedTeams = state.teams.map((t, idx) => {
+    if (idx !== state.activeTeamIndex) return { ...t };
+    const nextFails = t.studyCaseFailures + 1;
+    return {
+      ...t,
+      studyCaseFailures: nextFails,
+      ...(nextFails >= 3
+        ? {
+            isBankrupt: true,
+            bankruptReason: 'Bangkrut karena gagal studi kasus kimia sebanyak 3 kali!',
+          }
+        : {}),
+    };
+  });
+  const failedTeam = updatedTeams[state.activeTeamIndex];
+  const jailedState = sendPlayerToJail(
+    {
       ...state,
       teams: updatedTeams,
       activeStudyCase: null,
       activeDrawEventId: null,
-      phase: 'TURN_END',
-      events,
-      stateVersion: state.stateVersion + 1,
-      updatedAt: Date.now(),
     },
+    failedTeam.id,
+    {
+      eventType: 'CASE_REJECTED',
+      description: `${failedTeam.name} ditolak pada Studi Kasus (${failedTeam.studyCaseFailures}/3 kegagalan) & dikirim ke Penjara.`,
+      phaseAfter: 'TURN_END',
+      stateVersionOverride: nextVersion,
+    }
+  );
+
+  return {
+    ok: true,
+    state: jailedState,
   };
 }
 
@@ -1533,7 +1715,12 @@ export function payJailBailOrCard(state: GameState, teamId: string, method: 'bai
 }
 
 export function advanceToNextTurn(state: GameState): GameState {
-  if (state.phase === 'GAME_OVER') {
+  if (
+    state.phase === 'GAME_OVER' ||
+    state.phase === 'QUIZ_ACTIVE' ||
+    state.phase === 'STUDY_CASE_ACTIVE' ||
+    state.phase === 'AUCTION_ACTIVE'
+  ) {
     return state;
   }
 
@@ -1592,13 +1779,7 @@ export function advanceToNextTurn(state: GameState): GameState {
  * ===================================================================== */
 
 export function adminMoveTeam(state: GameState, teamId: string, targetPathIndex: number): GameState {
-  const clamped = ((Math.round(targetPathIndex) % 130) + 130) % 130;
-  return {
-    ...state,
-    teams: state.teams.map((t) => (t.id === teamId ? { ...t, position: clamped } : t)),
-    stateVersion: state.stateVersion + 1,
-    updatedAt: Date.now(),
-  };
+  return resolveTileLanding(state, teamId, targetPathIndex, 'admin').state;
 }
 
 export function adminUpdateTeam(

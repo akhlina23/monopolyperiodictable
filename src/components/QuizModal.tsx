@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GeneratedQuizData } from '../types/game';
-import { AlertTriangle, CheckCircle, Loader2, RefreshCw, Timer, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Loader2, RefreshCw, Timer, X, XCircle } from 'lucide-react';
 
 interface QuizModalProps {
   quiz: GeneratedQuizData | null;
+  quizDeadline?: number | null;
   isLoading: boolean;
   errorMessage: string | null;
   rewardKK: number;
+  isMinimized?: boolean;
+  onMinimize?: () => void;
+  onRestoreOnTimeout?: () => void;
   onRetryGenerate: () => void;
   onCancelNoPenalty: () => void;
   onQuizResolved: (isCorrect: boolean) => void;
@@ -15,15 +19,26 @@ interface QuizModalProps {
 
 export const QuizModal: React.FC<QuizModalProps> = ({
   quiz,
+  quizDeadline = null,
   isLoading,
   errorMessage,
   rewardKK,
+  isMinimized = false,
+  onMinimize,
+  onRestoreOnTimeout,
   onRetryGenerate,
   onCancelNoPenalty,
   onQuizResolved,
   timeLimitSeconds = 30,
 }) => {
-  const [timeLeft, setTimeLeft] = useState(timeLimitSeconds);
+  const getInitialTimeLeft = () => {
+    if (quizDeadline && Number.isFinite(quizDeadline)) {
+      return Math.max(0, Math.ceil((quizDeadline - Date.now()) / 1000));
+    }
+    return quiz?.timeLimitSeconds || timeLimitSeconds;
+  };
+
+  const [timeLeft, setTimeLeft] = useState(getInitialTimeLeft);
   const [selectedId, setSelectedId] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,7 +52,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
 
   // Reset local state whenever a new quiz card arrives
   useEffect(() => {
-    setTimeLeft(quiz?.timeLimitSeconds || timeLimitSeconds);
+    setTimeLeft(getInitialTimeLeft());
     setSelectedId(null);
     setIsLocked(false);
     setIsSubmitting(false);
@@ -91,13 +106,38 @@ export const QuizModal: React.FC<QuizModalProps> = ({
     }, 1800);
   };
 
-  // Start 30s countdown ONLY after quiz card is loaded and ready (§11.9)
+  // Run deadline-synced countdown even while modal is minimized so timer never resets
   useEffect(() => {
     if (!quiz || isLoading || errorMessage || isLocked) return;
+
+    const updateFromDeadline = () => {
+      if (quizDeadline && Number.isFinite(quizDeadline)) {
+        const remaining = Math.max(0, Math.ceil((quizDeadline - Date.now()) / 1000));
+        setTimeLeft(remaining);
+        if (remaining <= 0 && !lockedRef.current) {
+          onRestoreOnTimeout?.();
+          submitAnswerToServer(null, true);
+        }
+        return remaining;
+      }
+      return null;
+    };
+
+    if (quizDeadline && Number.isFinite(quizDeadline)) {
+      const initial = updateFromDeadline();
+      if (initial === 0) return;
+      const timer = setInterval(() => {
+        const rem = updateFromDeadline();
+        if (rem === 0) clearInterval(timer);
+      }, 250);
+      return () => clearInterval(timer);
+    }
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          onRestoreOnTimeout?.();
           submitAnswerToServer(null, true);
           return 0;
         }
@@ -105,17 +145,23 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [quiz?.id, isLoading, errorMessage, isLocked]);
+  }, [quiz?.id, quizDeadline, isLoading, errorMessage, isLocked]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#09090D]/85 p-4">
+    <div
+      className={
+        isMinimized
+          ? 'hidden'
+          : 'fixed inset-0 z-50 flex items-center justify-center bg-[#09090D]/85 p-4'
+      }
+    >
       <div className="bg-[#171820] border border-[#FF8733]/50 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
-        <div className="bg-[#20222D] border-b border-white/10 p-4 flex justify-between items-center">
-          <div>
+        <div className="bg-[#20222D] border-b border-white/10 p-4 flex justify-between items-center gap-3">
+          <div className="min-w-0">
             <span className="font-mono text-[10px] uppercase tracking-wider text-[#FF8733] font-bold">
               Dynamic AI Flashcard Quiz {quiz?.provider ? `· ${quiz.provider.toUpperCase()}` : ''}
             </span>
-            <h2 className="font-display text-base font-bold text-[#F4F1EA] mt-0.5">
+            <h2 className="font-display text-base font-bold text-[#F4F1EA] mt-0.5 truncate">
               {isLoading
                 ? 'Menyusun Pertanyaan Kimia AI...'
                 : errorMessage
@@ -123,12 +169,27 @@ export const QuizModal: React.FC<QuizModalProps> = ({
                 : quiz?.topic || 'Chemistry Flashcard Quiz'}
             </h2>
           </div>
-          {quiz && !isLoading && !errorMessage && (
-            <div className="flex items-center gap-1.5 bg-[#09090D] border border-white/10 px-3 py-1.5 rounded-xl font-mono text-sm font-bold text-[#FF8733] tabular-nums">
-              <Timer className="w-4 h-4" />
-              <span>{timeLeft}s</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {quiz && !isLoading && !errorMessage && (
+              <div className="flex items-center gap-1.5 bg-[#09090D] border border-white/10 px-3 py-1.5 rounded-xl font-mono text-sm font-bold text-[#FF8733] tabular-nums whitespace-nowrap">
+                <Timer className="w-4 h-4" />
+                <span>{timeLeft}s</span>
+              </div>
+            )}
+            {onMinimize && (
+              <button
+                type="button"
+                disabled={isLocked}
+                onClick={onMinimize}
+                aria-label="Tutup sementara untuk memeriksa papan"
+                title="Tutup sementara untuk melihat papan atau kartu unsur"
+                className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#09090D] hover:bg-[#2C2F3D] disabled:opacity-40 border border-white/15 text-[#F4F1EA] text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+              >
+                <span className="hidden sm:inline">Tutup Sementara</span>
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="p-5 flex flex-col gap-4">

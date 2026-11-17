@@ -13,7 +13,6 @@ import {
 import {
   adminAddTeam,
   adminForceWinner,
-  adminMoveTeam,
   adminRemoveTeam,
   adminSetActiveTurn,
   adminSetCompanyLevel,
@@ -21,6 +20,8 @@ import {
   adminUpdateEconomy,
   adminUpdateTeam,
   resetMatchState,
+  resolveTileLanding,
+  sendPlayerToJail,
 } from '../../engine/gameActions';
 import {
   AlertTriangle,
@@ -554,15 +555,22 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                         <span className="text-[10px] text-[#A6A9B7] block mb-0.5">Move Token (Tile #0..129)</span>
                         <select
                           value={t.position}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const targetPath = Number(e.target.value);
+                            const landingResult = resolveTileLanding(
+                              gameState,
+                              t.id,
+                              targetPath,
+                              'admin'
+                            );
                             applyWithAudit(
-                              adminMoveTeam(gameState, t.id, Number(e.target.value)),
+                              landingResult.state,
                               'MOVE_TOKEN',
                               t.name,
                               `#${t.position}`,
-                              `#${e.target.value}`
-                            )
-                          }
+                              `#${landingResult.forcedJailPathIndex ?? targetPath}`
+                            );
+                          }}
                           className="w-full px-2 py-1 rounded bg-[#09090D] border border-white/15 text-[#F4F1EA] text-[11px]"
                         >
                           {BOARD_TILES.map((bt) => (
@@ -641,19 +649,25 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                         type="button"
                         onClick={() => {
                           const nextInJail = !t.isInJail;
-                          const jailDuration =
-                            gameState.economyConfig.educationalRewards.jailDurationTurns ?? 3;
+                          const nextState = nextInJail
+                            ? sendPlayerToJail(gameState, t.id, {
+                                eventType: 'ADMIN_SENT_TO_JAIL',
+                                description: `${t.name} dikirim ke Penjara oleh Admin.`,
+                              })
+                            : adminUpdateTeam(gameState, t.id, {
+                                isInJail: false,
+                                jailTurns: 0,
+                                jailStatus: 'released',
+                                lastJailEventId: null,
+                              });
                           applyWithAudit(
-                            adminUpdateTeam(gameState, t.id, {
-                              isInJail: nextInJail,
-                              jailTurns: nextInJail ? jailDuration : 0,
-                              jailStatus: nextInJail ? 'detained' : 'released',
-                              lastJailEventId: nextInJail ? t.lastJailEventId : null,
-                            }),
+                            nextState,
                             'TOGGLE_JAIL',
                             t.name,
-                            String(t.isInJail),
-                            String(nextInJail)
+                            `${t.isInJail} (#${t.position})`,
+                            nextInJail
+                              ? `true (#${nextState.teams.find((tm) => tm.id === t.id)?.position ?? 33})`
+                              : `false (#${t.position})`
                           );
                         }}
                         className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold cursor-pointer ${

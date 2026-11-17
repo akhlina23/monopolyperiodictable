@@ -71,11 +71,14 @@ import {
   FlaskConical,
   Globe,
   Grid3x3,
+  HelpCircle,
   KeyRound,
   LayoutGrid,
   Loader2,
+  Lock,
   Shield,
   ShieldAlert,
+  Timer,
   Trophy,
   Upload,
   Users,
@@ -136,6 +139,9 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [recentFingerprints, setRecentFingerprints] = useState<string[]>([]);
+  const [isEducationModalMinimized, setIsEducationModalMinimized] = useState(false);
+  const [quizSecondsLeft, setQuizSecondsLeft] = useState<number | null>(null);
+  const fetchingDrawIdRef = useRef<string | null>(null);
   const lastDrawContextRef = useRef<{
     type: 'quiz' | 'study_case';
     drawEventId: string;
@@ -313,6 +319,8 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
         setIsHopping(false);
         setAiLoading(false);
         setAiError(null);
+        setIsEducationModalMinimized(false);
+        fetchingDrawIdRef.current = null;
         lastDrawContextRef.current = null;
         setRecentFingerprints([]);
         setStatusMessage(
@@ -528,6 +536,8 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
 
   const fetchDynamicEducationCard = useCallback(
     async (type: 'quiz' | 'study_case', drawEventId: string, element: ChemicalElement) => {
+      if (fetchingDrawIdRef.current === drawEventId) return;
+      fetchingDrawIdRef.current = drawEventId;
       lastDrawContextRef.current = { type, drawEventId, element };
       setAiLoading(true);
       setAiError(null);
@@ -573,11 +583,25 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
       } catch (err: any) {
         setAiError(err?.message || 'Gagal terhubung ke server AI.');
       } finally {
+        fetchingDrawIdRef.current = null;
         setAiLoading(false);
       }
     },
     [recentFingerprints]
   );
+
+  useEffect(() => {
+    if (gameState?.phase !== 'QUIZ_ACTIVE' || !gameState.quizDeadline) {
+      setQuizSecondsLeft(null);
+      return;
+    }
+    const updateCountdown = () => {
+      setQuizSecondsLeft(Math.max(0, Math.ceil((gameState.quizDeadline! - Date.now()) / 1000)));
+    };
+    updateCountdown();
+    const timerId = window.setInterval(updateCountdown, 250);
+    return () => window.clearInterval(timerId);
+  }, [gameState?.phase, gameState?.quizDeadline]);
 
   useEffect(() => {
     if (!gameState || aiLoading || aiError) return;
@@ -609,6 +633,8 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
     const res = cancelPendingEducationCard(gameState);
     setAiError(null);
     setAiLoading(false);
+    setIsEducationModalMinimized(false);
+    fetchingDrawIdRef.current = null;
     const next = advanceToNextTurn(res.state);
     latestStateRef.current = next;
     setGameState(next);
@@ -653,12 +679,14 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
       } else if (next.phase === 'QUIZ_ACTIVE') {
         const drawId = next.activeDrawEventId || `draw_quiz_${Date.now()}`;
         const randomEl = ELEMENTS_BY_ID[Math.floor(Math.random() * 118) + 1];
+        setIsEducationModalMinimized(false);
         setStatusMessage(`${team.name} landed on QUIZ! Generating fresh AI chemistry question...`);
         soundManager.play('alert');
         fetchDynamicEducationCard('quiz', drawId, randomEl);
       } else if (next.phase === 'STUDY_CASE_ACTIVE') {
         const drawId = next.activeDrawEventId || `draw_case_${Date.now()}`;
         const randomEl = ELEMENTS_BY_ID[Math.floor(Math.random() * 118) + 1];
+        setIsEducationModalMinimized(false);
         setStatusMessage(`${team.name} landed on STUDY CASE! Generating fresh AI chemistry case...`);
         soundManager.play('alert');
         fetchDynamicEducationCard('study_case', drawId, randomEl);
@@ -873,6 +901,8 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
     const curr = latestStateRef.current;
     if (!curr) return;
     soundManager.play(isCorrect ? 'quizSuccess' : 'alert');
+    setIsEducationModalMinimized(false);
+    fetchingDrawIdRef.current = null;
     const res = resolveQuizResult(curr, isCorrect);
     const next = advanceToNextTurn(res.state);
     latestStateRef.current = next;
@@ -884,6 +914,8 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
     const curr = latestStateRef.current;
     if (!curr) return;
     soundManager.play(isApproved ? 'quizSuccess' : 'alert');
+    setIsEducationModalMinimized(false);
+    fetchingDrawIdRef.current = null;
     const res = resolveStudyCaseResult(curr, isApproved);
     const next = advanceToNextTurn(res.state);
     latestStateRef.current = next;
@@ -892,7 +924,16 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
   };
 
   const handleEndTurn = () => {
-    if (!gameState || isHopping || diceRolling) return;
+    if (
+      !gameState ||
+      isHopping ||
+      diceRolling ||
+      gameState.phase === 'QUIZ_ACTIVE' ||
+      gameState.phase === 'STUDY_CASE_ACTIVE' ||
+      gameState.phase === 'AUCTION_ACTIVE'
+    ) {
+      return;
+    }
     const next = advanceToNextTurn(gameState);
     latestStateRef.current = next;
     setGameState(next);
@@ -922,6 +963,13 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
   const activeTeam = gameState?.teams[gameState.activeTeamIndex] ?? null;
   const activeTile = activeTeam ? TILES_BY_PATH_INDEX[activeTeam.position] : BOARD_TILES[0];
   const activeTileElement = activeTile?.atomicNumber ? ELEMENTS_BY_ID[activeTile.atomicNumber] : null;
+
+  const hasPendingQuiz = Boolean(gameState?.phase === 'QUIZ_ACTIVE' || gameState?.activeQuiz);
+  const hasPendingStudyCase = Boolean(
+    gameState?.phase === 'STUDY_CASE_ACTIVE' || gameState?.activeStudyCase
+  );
+  const hasPendingEducationCard = hasPendingQuiz || hasPendingStudyCase;
+  const pendingEducationLabel = hasPendingStudyCase ? 'Studi Kasus' : 'Kuis';
 
   const canBuyCurrentElement = Boolean(
     gameState &&
@@ -1192,6 +1240,33 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
                 ))}
               </div>
 
+              {hasPendingEducationCard && isEducationModalMinimized && (
+                <div className="absolute top-3 right-3 z-20 flex items-center gap-2.5 bg-[#171820]/95 border border-[#FF8733]/60 px-3 py-2 rounded-xl shadow-lg">
+                  <div className="flex items-center gap-2 text-xs text-[#F4F1EA]">
+                    {hasPendingQuiz ? (
+                      <Timer className="w-4 h-4 text-[#FF8733] shrink-0" />
+                    ) : (
+                      <HelpCircle className="w-4 h-4 text-[#D8B4FE] shrink-0" />
+                    )}
+                    <span className="font-semibold whitespace-nowrap">
+                      {pendingEducationLabel} Aktif
+                      {hasPendingQuiz && quizSecondsLeft !== null ? (
+                        <span className="ml-1.5 font-mono text-[#FF8733] tabular-nums">
+                          · {quizSecondsLeft}s
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEducationModalMinimized(false)}
+                    className="min-h-[34px] px-3 py-1 rounded-lg bg-[#7029FF] hover:bg-[#5E1FE0] text-white text-xs font-bold whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+                  >
+                    Buka {pendingEducationLabel}
+                  </button>
+                </div>
+              )}
+
               <BoardScene3D
                 tiles={BOARD_TILES}
                 teams={gameState.teams}
@@ -1208,6 +1283,20 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
                 cameraTrigger={cameraTrigger}
                 reducedMotion={reducedMotion}
                 onTileClick={(tile) => {
+                  if (hasPendingQuiz && tile.tileType === 'quiz') {
+                    setIsEducationModalMinimized(false);
+                    setSelectedTile(null);
+                    soundManager.play('hop');
+                    setStatusMessage('Membuka kembali Kuis Kimia aktif...');
+                    return;
+                  }
+                  if (hasPendingStudyCase && tile.tileType === 'study_case') {
+                    setIsEducationModalMinimized(false);
+                    setSelectedTile(null);
+                    soundManager.play('hop');
+                    setStatusMessage('Membuka kembali Studi Kasus aktif...');
+                    return;
+                  }
                   if (tile.atomicNumber && ELEMENTS_BY_ID[tile.atomicNumber]) {
                     setSelectedElement(ELEMENTS_BY_ID[tile.atomicNumber]);
                   }
@@ -1401,17 +1490,61 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
               );
             })()}
 
+            {hasPendingEducationCard && (
+              <div className="bg-[#241B14] border border-[#FF8733]/60 rounded-xl p-3 space-y-2 text-xs">
+                <div className="flex items-start gap-2 text-[#FDBA74] font-semibold">
+                  <Lock className="w-4 h-4 shrink-0 mt-0.5 text-[#FF8733]" />
+                  <div className="min-w-0 flex-1">
+                    <div>Selesaikan Studi Kasus / Kuis terlebih dahulu</div>
+                    {hasPendingQuiz && quizSecondsLeft !== null && (
+                      <div className="font-mono text-[11px] text-[#FF8733] tabular-nums mt-0.5">
+                        Sisa waktu kuis: {quizSecondsLeft}s
+                      </div>
+                    )}
+                    {isEducationModalMinimized && (
+                      <div className="text-[11px] text-[#F4F1EA]/80 font-normal mt-1">
+                        Klik petak {pendingEducationLabel} di papan 3D atau tombol di bawah untuk melanjutkan.
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {isEducationModalMinimized && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEducationModalMinimized(false)}
+                    className="w-full min-h-[40px] py-2 px-4 rounded-xl bg-[#FF8733] hover:bg-[#E67222] text-[#09090D] font-bold text-xs whitespace-nowrap cursor-pointer transition-colors"
+                  >
+                    Buka {pendingEducationLabel}
+                    {hasPendingQuiz && quizSecondsLeft !== null ? ` (${quizSecondsLeft}s)` : ''}
+                  </button>
+                )}
+              </div>
+            )}
+
             <button
               type="button"
               disabled={
-                diceRolling || isHopping || gameState.phase !== 'TURN_START' || activeTeam.isBankrupt
+                diceRolling ||
+                isHopping ||
+                gameState.phase !== 'TURN_START' ||
+                hasPendingEducationCard ||
+                activeTeam.isBankrupt
               }
               onClick={handleRollDice}
-              className="w-full py-3 rounded-xl bg-[#7029FF] hover:bg-[#5E1FE0] disabled:opacity-45 text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              title={
+                hasPendingEducationCard
+                  ? 'Selesaikan Studi Kasus / Kuis terlebih dahulu'
+                  : undefined
+              }
+              className="w-full py-3 rounded-xl bg-[#7029FF] hover:bg-[#5E1FE0] disabled:opacity-45 disabled:cursor-not-allowed text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
               <Dices className={`w-5 h-5 ${diceRolling ? 'animate-spin' : ''}`} />
               <span>
-                {diceRolling ? 'Rolling 3D Dice...' : isHopping ? 'Moving Piece...' : 'Roll 2 Dice'}
+                {diceRolling
+                  ? 'Rolling 3D Dice...'
+                  : isHopping
+                  ? 'Moving Piece...'
+                  : 'Roll 2 Dice'}
               </span>
             </button>
 
@@ -1485,12 +1618,16 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
                 disabled={
                   isHopping ||
                   diceRolling ||
-                  gameState.phase === 'QUIZ_ACTIVE' ||
-                  gameState.phase === 'STUDY_CASE_ACTIVE' ||
+                  hasPendingEducationCard ||
                   gameState.phase === 'AUCTION_ACTIVE'
                 }
                 onClick={handleEndTurn}
-                className="w-full py-2.5 rounded-xl bg-[#20222D] hover:bg-[#2C2F3D] disabled:opacity-40 border border-white/15 text-[#F4F1EA] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                title={
+                  hasPendingEducationCard
+                    ? 'Selesaikan Studi Kasus / Kuis terlebih dahulu'
+                    : undefined
+                }
+                className="w-full py-2.5 rounded-xl bg-[#20222D] hover:bg-[#2C2F3D] disabled:opacity-40 disabled:cursor-not-allowed border border-white/15 text-[#F4F1EA] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4 text-[#86EFAC]" /> End Turn &amp; Pass Dice
               </button>
@@ -1816,19 +1953,23 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
         />
       )}
 
-      {(gameState.phase === 'QUIZ_ACTIVE' || gameState.activeQuiz) && (
+      {hasPendingQuiz && (
         <QuizModal
           quiz={gameState.activeQuiz}
+          quizDeadline={gameState.quizDeadline}
           isLoading={aiLoading}
           errorMessage={aiError}
           rewardKK={gameState.economyConfig.educationalRewards.quizRewardKK}
+          isMinimized={isEducationModalMinimized}
+          onMinimize={() => setIsEducationModalMinimized(true)}
+          onRestoreOnTimeout={() => setIsEducationModalMinimized(false)}
           onRetryGenerate={handleRetryEducationCard}
           onCancelNoPenalty={handleCancelEducationNoPenalty}
           onQuizResolved={handleQuizResolved}
         />
       )}
 
-      {(gameState.phase === 'STUDY_CASE_ACTIVE' || gameState.activeStudyCase) && (
+      {hasPendingStudyCase && (
         <StudyCaseModal
           studyCase={gameState.activeStudyCase}
           isLoading={aiLoading}
@@ -1836,6 +1977,8 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
           rewardKK={gameState.economyConfig.educationalRewards.studyCaseRewardKK}
           activeTeam={activeTeam}
           otherTeams={gameState.teams.filter((t) => t.id !== activeTeam.id && !t.isBankrupt)}
+          isMinimized={isEducationModalMinimized}
+          onMinimize={() => setIsEducationModalMinimized(true)}
           onRetryGenerate={handleRetryEducationCard}
           onCancelNoPenalty={handleCancelEducationNoPenalty}
           onComplete={handleStudyCaseComplete}
@@ -1863,11 +2006,38 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
               window.clearTimeout(hopSafetyTimerRef.current);
               hopSafetyTimerRef.current = null;
             }
+            const prev = latestStateRef.current;
             setHopQueue([]);
             setIsHopping(false);
             resolvedMoveVersionRef.current = null;
             latestStateRef.current = next;
             setGameState(next);
+
+            const enteredQuizOrCase =
+              (next.phase === 'QUIZ_ACTIVE' || next.phase === 'STUDY_CASE_ACTIVE') &&
+              (next.activeDrawEventId !== prev?.activeDrawEventId || next.phase !== prev?.phase);
+
+            if (enteredQuizOrCase) {
+              setAiError(null);
+              setAiLoading(false);
+              fetchingDrawIdRef.current = null;
+              setIsEducationModalMinimized(false);
+              setSelectedTile(null);
+              setIsAdminOpen(false);
+              soundManager.play('alert');
+              setStatusMessage(
+                `${next.teams[next.activeTeamIndex]?.name || 'Pemain'} dipindahkan ke petak ${
+                  next.phase === 'QUIZ_ACTIVE' ? 'Kuis' : 'Studi Kasus'
+                } oleh Admin!`
+              );
+            } else if (
+              next.events[0]?.id !== prev?.events[0]?.id &&
+              (next.events[0]?.type === 'CUSTOMS_SENT_TO_JAIL' ||
+                next.events[0]?.type === 'ADMIN_SENT_TO_JAIL')
+            ) {
+              soundManager.play('alert');
+              setStatusMessage(next.events[0].description);
+            }
           }}
           onClose={() => setIsAdminOpen(false)}
         />
