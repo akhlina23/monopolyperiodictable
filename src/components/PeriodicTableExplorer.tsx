@@ -245,7 +245,7 @@ export const PeriodicTableExplorer: React.FC<PeriodicTableExplorerProps> = ({
           {[
             { id: 'properties', label: 'Properties', icon: Layers },
             { id: 'electrons', label: 'Electrons', icon: Sparkles },
-            { id: 'isotopes', label: 'Isotopes', icon: Atom },
+            { id: 'isotopes', label: 'Isotop / Isobar / Isoton', icon: Atom },
             { id: 'compounds', label: 'Compounds', icon: FlaskConical },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -255,13 +255,13 @@ export const PeriodicTableExplorer: React.FC<PeriodicTableExplorerProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as ExplorerTab)}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors ${
                   active
                     ? 'bg-[#286BFF] text-white'
                     : 'text-[#A6A9B7] hover:text-white hover:bg-[#20222D]'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3.5 h-3.5 shrink-0" />
                 <span>{tab.label}</span>
               </button>
             );
@@ -581,7 +581,7 @@ export const PeriodicTableExplorer: React.FC<PeriodicTableExplorerProps> = ({
 
       {activeTab === 'isotopes' && (
         <div className="flex-1 min-h-[380px]">
-          <IsotopeViewer element={selectedElement} />
+          <IsotopeViewer element={selectedElement} onSelectElement={onSelectElement} />
         </div>
       )}
 

@@ -328,22 +328,52 @@ app.post('/api/admin/educational/regenerate', requireAdminAuth, async (req, res)
   }
 });
 
+// Explicit /api/* JSON 404 handler BEFORE Vite SPA or static fallback
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    error: `Endpoint API tidak ditemukan: ${req.method} ${req.originalUrl}`,
+    code: 'API_NOT_FOUND',
+  });
+});
+
+// Explicit JSON error handler for /api/* (e.g. malformed JSON body or unhandled route errors)
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    if (req.path === '/api' || req.path.startsWith('/api/')) {
+      const status =
+        typeof err?.status === 'number'
+          ? err.status
+          : typeof err?.statusCode === 'number'
+          ? err.statusCode
+          : 500;
+      res.status(status).json({
+        error: err?.message || 'Terjadi kesalahan internal pada server API.',
+        code: err?.code || 'API_INTERNAL_ERROR',
+      });
+      return;
+    }
+    next(err);
+  }
+);
+
 async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';
   const distDir = path.resolve(__appRoot, 'dist');
   const hasDist = isProd && fs.existsSync(path.join(distDir, 'index.html'));
 
-  let viteReady: Promise<Awaited<ReturnType<typeof createViteServer>> | null>;
-
   if (hasDist) {
     app.use(express.static(distDir));
     app.use((req, res, next) => {
-      if (req.path.startsWith('/api')) return next();
+      if (req.path === '/api' || req.path.startsWith('/api/')) return next();
       res.sendFile(path.join(distDir, 'index.html'));
     });
-    viteReady = Promise.resolve(null);
   } else {
-    viteReady = createViteServer({
+    const vite = await createViteServer({
       root: __appRoot,
       configFile: path.resolve(__appRoot, 'vite.config.ts'),
       server: {
@@ -355,15 +385,9 @@ async function startServer() {
       appType: 'spa',
     });
 
-    app.use(async (req, res, next) => {
-      if (req.path.startsWith('/api')) return next();
-      try {
-        const vite = await viteReady;
-        if (!vite) return next();
-        vite.middlewares(req, res, next);
-      } catch (err) {
-        next(err);
-      }
+    app.use((req, res, next) => {
+      if (req.path === '/api' || req.path.startsWith('/api/')) return next();
+      vite.middlewares(req, res, next);
     });
   }
 
@@ -373,11 +397,6 @@ async function startServer() {
 
   server.on('error', (err: any) => {
     console.error('Failed to bind dev server on port', PORT, err);
-    process.exit(1);
-  });
-
-  await viteReady.catch((err) => {
-    console.error('Vite middleware initialization failed:', err);
     process.exit(1);
   });
 }

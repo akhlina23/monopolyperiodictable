@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GeneratedQuizData } from '../types/game';
 import { AlertTriangle, CheckCircle, Loader2, RefreshCw, Timer, X, XCircle } from 'lucide-react';
+import { safeFetchJson } from '../utils/apiClient';
 
 interface QuizModalProps {
   quiz: GeneratedQuizData | null;
@@ -68,7 +69,11 @@ export const QuizModal: React.FC<QuizModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('./api/ai/quiz/submit', {
+      const result = await safeFetchJson<{
+        isCorrect?: boolean;
+        correctOptionId?: 'A' | 'B' | 'C' | 'D';
+        explanation?: string;
+      }>('/api/ai/quiz/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,8 +82,8 @@ export const QuizModal: React.FC<QuizModalProps> = ({
           timedOut,
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (result.ok && result.data) {
+        const data = result.data;
         setGradeResult({
           isCorrect: !!data.isCorrect,
           correctOptionId: data.correctOptionId,

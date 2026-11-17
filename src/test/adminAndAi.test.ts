@@ -38,6 +38,7 @@ import {
   sanitizeQuizForClient,
   sanitizeStudyCaseForClient,
 } from '../../server/aiProviders';
+import { normalizeApiPath, parseJsonResponse } from '../utils/apiClient';
 
 describe('V2 Research Edition: START Income 120%–200%, Liquidation & Zero Salary', () => {
   it('pays 0 KK fixed START salary and exact 120% company income when crossing START', () => {
@@ -297,5 +298,38 @@ describe('V2 Research Edition: AI Schema Validation, Key Stripping & Missing Unm
     const og = ELEMENTS_BY_ID[118];
     expect(og.symbol).toBe('Og');
     expect(og.electronegativity ?? null).toBeNull();
+  });
+
+  it('safely validates Content-Type before res.json() and rejects HTML SPA fallback payloads cleanly', async () => {
+    expect(normalizeApiPath('./api/ai/quiz')).toBe('/api/ai/quiz');
+    expect(normalizeApiPath('api/ai/study-case')).toBe('/api/ai/study-case');
+    expect(normalizeApiPath('/api/health')).toBe('/api/health');
+
+    const htmlFallbackRes = new Response('<!doctype html><html><body>SPA</body></html>', {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    });
+    const htmlParsed = await parseJsonResponse(htmlFallbackRes);
+    expect(htmlParsed.ok).toBe(false);
+    expect(htmlParsed.isNonJson).toBe(true);
+    expect(htmlParsed.data).toBeNull();
+    expect(htmlParsed.error).toContain('HTML');
+
+    const validJsonRes = new Response(JSON.stringify({ id: 'quiz_1', topic: 'Ikatan Kimia' }), {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+    });
+    const validParsed = await parseJsonResponse<{ id: string; topic: string }>(validJsonRes);
+    expect(validParsed.ok).toBe(true);
+    expect(validParsed.data?.id).toBe('quiz_1');
+
+    const errorJsonRes = new Response(JSON.stringify({ error: 'API key missing', code: 'NO_KEY' }), {
+      status: 502,
+      headers: { 'content-type': 'application/json' },
+    });
+    const errParsed = await parseJsonResponse(errorJsonRes);
+    expect(errParsed.ok).toBe(false);
+    expect(errParsed.status).toBe(502);
+    expect(errParsed.error).toBe('API key missing');
   });
 });

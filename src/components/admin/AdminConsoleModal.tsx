@@ -23,6 +23,7 @@ import {
   resolveTileLanding,
   sendPlayerToJail,
 } from '../../engine/gameActions';
+import { safeFetchJson } from '../../utils/apiClient';
 import {
   AlertTriangle,
   Building2,
@@ -96,7 +97,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     reason = 'Admin adjustment'
   ) => {
     try {
-      const res = await fetch('./api/admin/audit', {
+      const result = await safeFetchJson<{ entry?: any }>('/api/admin/audit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,11 +112,8 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
           gameId: gameState.gameId,
         }),
       });
-      if (res.ok) {
-        const d = await res.json();
-        if (d.entry) {
-          setAuditLogs((prev) => [d.entry, ...prev]);
-        }
+      if (result.ok && result.data?.entry) {
+        setAuditLogs((prev) => [result.data!.entry, ...prev]);
       }
     } catch {
       // ignore audit fetch failure in offline unit checks
@@ -125,16 +123,17 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   const loadProtectedData = async () => {
     try {
       const [auditRes, eduRes] = await Promise.all([
-        fetch('./api/admin/audit'),
-        fetch('./api/admin/educational'),
+        safeFetchJson<{ logs?: any[] }>('/api/admin/audit'),
+        safeFetchJson<{ quizzes?: any[]; studyCases?: any[] }>('/api/admin/educational'),
       ]);
-      if (auditRes.ok) {
-        const a = await auditRes.json();
-        setAuditLogs(a.logs || []);
+      if (auditRes.ok && auditRes.data) {
+        setAuditLogs(auditRes.data.logs || []);
       }
-      if (eduRes.ok) {
-        const e = await eduRes.json();
-        setEduRecords({ quizzes: e.quizzes || [], studyCases: e.studyCases || [] });
+      if (eduRes.ok && eduRes.data) {
+        setEduRecords({
+          quizzes: eduRes.data.quizzes || [],
+          studyCases: eduRes.data.studyCases || [],
+        });
       }
     } catch {
       // ignore
@@ -142,13 +141,16 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   };
 
   useEffect(() => {
-    fetch('./api/admin/status')
-      .then((r) => r.json())
-      .then((d) => {
-        setAuthenticated(!!d.authenticated);
-        setAdminConfigured(d.adminConfigured !== false);
+    safeFetchJson<{ authenticated?: boolean; adminConfigured?: boolean }>('/api/admin/status')
+      .then((res) => {
+        if (!res.ok || !res.data) {
+          setAuthChecked(true);
+          return;
+        }
+        setAuthenticated(!!res.data.authenticated);
+        setAdminConfigured(res.data.adminConfigured !== false);
         setAuthChecked(true);
-        if (d.authenticated) {
+        if (res.data.authenticated) {
           loadProtectedData();
         }
       })
@@ -162,14 +164,16 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     setAuthError(null);
     setLoggingIn(true);
     try {
-      const res = await fetch('./api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: passwordInput, gameId: gameState.gameId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAuthError(data.error || 'Autentikasi gagal.');
+      const result = await safeFetchJson<{ authenticated?: boolean; error?: string }>(
+        '/api/admin/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: passwordInput, gameId: gameState.gameId }),
+        }
+      );
+      if (!result.ok) {
+        setAuthError(result.error || 'Autentikasi gagal.');
         return;
       }
       setPasswordInput('');
@@ -188,7 +192,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
    */
   const handleLogoutAdmin = async () => {
     try {
-      await fetch('./api/admin/logout', {
+      await safeFetchJson('/api/admin/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameId: gameState.gameId }),
@@ -1060,7 +1064,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                         <button
                           type="button"
                           onClick={async () => {
-                            await fetch(`./api/admin/educational/quiz/${q.id}`, {
+                            await safeFetchJson(`/api/admin/educational/quiz/${q.id}`, {
                               method: 'PATCH',
                               headers: {
                                 'Content-Type': 'application/json',
@@ -1081,7 +1085,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                         <button
                           type="button"
                           onClick={async () => {
-                            await fetch(`./api/admin/educational/quiz/${q.id}`, {
+                            await safeFetchJson(`/api/admin/educational/quiz/${q.id}`, {
                               method: 'DELETE',
                               headers: { 'X-Requested-With': 'PTM-Admin' },
                             });
@@ -1128,7 +1132,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                       <button
                         type="button"
                         onClick={async () => {
-                          await fetch(`./api/admin/educational/study_case/${c.id}`, {
+                          await safeFetchJson(`/api/admin/educational/study_case/${c.id}`, {
                             method: 'DELETE',
                             headers: { 'X-Requested-With': 'PTM-Admin' },
                           });

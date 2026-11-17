@@ -15,7 +15,13 @@ import {
   buildHundOrbitalBoxes,
   parseExpandedElectronSubshells,
 } from '../utils/electronConfig';
-import { getIsotopesForElement } from '../data/isotopes';
+import {
+  getAllVerifiedNuclides,
+  getIsobarsByMassNumber,
+  getIsotonesByNeutronCount,
+  getIsotopesForElement,
+  getMostAbundantNuclide,
+} from '../data/isotopes';
 import { COMPOUNDS_DATABASE } from '../data/compounds';
 import {
   COMPOUND_STRUCTURES,
@@ -193,6 +199,34 @@ describe('V2 3D Central Periodic Table, Electrons & Isotopes Data Integrity', ()
     const uncatalogued = getIsotopesForElement(115);
     expect(uncatalogued.coverage).toBe('unavailable');
     expect(uncatalogued.records).toEqual([]);
+  });
+
+  it('resolves most abundant nuclides, cross-element Isobars (same A), and Isotones (same N)', () => {
+    expect(getMostAbundantNuclide(6)?.massNumber).toBe(12); // ¹²C 98.93%
+    expect(getMostAbundantNuclide(18)?.massNumber).toBe(40); // ⁴⁰Ar 99.6035%
+    expect(getMostAbundantNuclide(26)?.massNumber).toBe(56); // ⁵⁶Fe 91.754%
+    expect(getMostAbundantNuclide(92)?.massNumber).toBe(238); // ²³⁸U 99.2742%
+    expect(getMostAbundantNuclide(115)).toBeNull();
+
+    // Isobars: same mass number A across different Z
+    const isobars14 = getIsobarsByMassNumber(14);
+    expect(isobars14.map((n) => n.atomicNumber)).toEqual([6, 7]); // ¹⁴C, ¹⁴N
+
+    const isobars40 = getIsobarsByMassNumber(40);
+    expect(isobars40.map((n) => n.atomicNumber)).toEqual([18, 19, 20]); // ⁴⁰Ar, ⁴⁰K, ⁴⁰Ca
+
+    // Isotones: same neutron count N = A - Z across different Z
+    const isotones8 = getIsotonesByNeutronCount(8);
+    expect(isotones8.map((n) => n.atomicNumber)).toEqual([6, 7, 8]); // ¹⁴C, ¹⁵N, ¹⁶O
+
+    const isotones20 = getIsotonesByNeutronCount(20);
+    expect(isotones20.map((n) => n.atomicNumber)).toEqual([16, 17, 18, 19, 20]); // ³⁶S..⁴⁰Ca
+
+    // Verify mathematical identity A = Z + N for all nuclide entries
+    getAllVerifiedNuclides().forEach((n) => {
+      expect(n.massNumber).toBe(n.atomicNumber + n.neutronCount);
+      expect(n.neutronCount).toBeGreaterThanOrEqual(0);
+    });
   });
 });
 

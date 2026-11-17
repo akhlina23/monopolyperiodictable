@@ -11,6 +11,7 @@ import {
   ThumbsUp,
   X,
 } from 'lucide-react';
+import { safeFetchJson } from '../utils/apiClient';
 
 interface StudyCaseModalProps {
   studyCase: GeneratedStudyCaseData | null;
@@ -62,14 +63,16 @@ export const StudyCaseModal: React.FC<StudyCaseModalProps> = ({
     setStage('evaluating');
     if (studyCase?.id) {
       try {
-        const res = await fetch('./api/ai/study-case/rubric-guide', {
+        const result = await safeFetchJson<{
+          expectedAnswerOutline?: string[];
+          learningExplanation?: string;
+        }>('/api/ai/study-case/rubric-guide', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ caseId: studyCase.id }),
         });
-        if (res.ok) {
-          const data = await res.json();
-          setRubricGuide(data);
+        if (result.ok && result.data) {
+          setRubricGuide(result.data);
         }
       } catch {
         // Ignore if already provided

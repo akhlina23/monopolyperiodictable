@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AIProviderId, AISettingsConfig, DEFAULT_AI_SETTINGS } from '../../types/game';
 import { CheckCircle2, Cpu, Loader2, PlugZap, X, XCircle } from 'lucide-react';
+import { safeFetchJson } from '../../utils/apiClient';
 
 interface AISettingsModalProps {
   onClose: () => void;
@@ -26,11 +27,13 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ onClose }) => 
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
-    fetch('./api/ai/settings')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.settings) setSettings(d.settings);
-        if (d.providers) setProvidersConfigured(d.providers);
+    safeFetchJson<{ settings?: AISettingsConfig; providers?: Record<AIProviderId, boolean> }>(
+      '/api/ai/settings'
+    )
+      .then((res) => {
+        if (!res.ok || !res.data) return;
+        if (res.data.settings) setSettings(res.data.settings);
+        if (res.data.providers) setProvidersConfigured(res.data.providers);
       })
       .catch(() => {});
   }, []);
@@ -38,7 +41,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ onClose }) => 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch('./api/ai/settings', {
+      await safeFetchJson('/api/ai/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
@@ -53,13 +56,16 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ onClose }) => 
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch('./api/ai/test', {
+      const result = await safeFetchJson<{ ok?: boolean; message?: string }>('/api/ai/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider: settings.provider, model: settings.model }),
       });
-      const data = await res.json();
-      setTestResult({ ok: !!data.ok, message: data.message || 'Test selesai.' });
+      if (!result.ok || !result.data) {
+        setTestResult({ ok: false, message: result.error || 'Koneksi gagal.' });
+        return;
+      }
+      setTestResult({ ok: !!result.data.ok, message: result.data.message || 'Test selesai.' });
     } catch (err: any) {
       setTestResult({ ok: false, message: err?.message || 'Koneksi gagal.' });
     } finally {

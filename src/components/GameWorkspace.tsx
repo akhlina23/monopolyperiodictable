@@ -56,6 +56,7 @@ import { AuctionModal } from './AuctionModal';
 import { AdminConsoleModal } from './admin/AdminConsoleModal';
 import { AISettingsModal } from './ai/AISettingsModal';
 import { soundManager } from '../utils/sound';
+import { safeFetchJson } from '../utils/apiClient';
 import {
   Accessibility,
   ArrowLeft,
@@ -543,8 +544,8 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
       setAiError(null);
 
       try {
-        const endpoint = type === 'quiz' ? './api/ai/quiz' : './api/ai/study-case';
-        const res = await fetch(endpoint, {
+        const endpoint = type === 'quiz' ? '/api/ai/quiz' : '/api/ai/study-case';
+        const result = await safeFetchJson<any>(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -553,12 +554,12 @@ export const GameWorkspace: React.FC<GameWorkspaceProps> = ({
             recentFingerprints,
           }),
         });
-        const data = await res.json();
-        if (!res.ok) {
-          setAiError(data.error || `Server AI mengembalikan status ${res.status}.`);
+        if (!result.ok || !result.data) {
+          setAiError(result.error || `Server AI mengembalikan status ${result.status}.`);
           setAiLoading(false);
           return;
         }
+        const data = result.data;
 
         if (data.fingerprint) {
           setRecentFingerprints((prev) => [data.fingerprint, ...prev].slice(0, 20));
