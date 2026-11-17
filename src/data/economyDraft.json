@@ -1,0 +1,28 @@
+{
+  "startingCapitalKK": 100000,
+  "baseStartSalaryKK": 0,
+  "companyBuildCostPercentByCount": {
+    "1_small": 15,
+    "2_small_total": 30,
+    "3_small_total": 45,
+    "4_small_total": 60,
+    "upgrade_to_large_additional": 40
+  },
+  "businessIncomePercentAtStart": {
+    "0_companies": 0,
+    "1_small": 5,
+    "2_small": 10,
+    "3_small": 15,
+    "4_small": 20,
+    "1_large": 25
+  },
+  "rentPercentByDevelopment": {
+    "no_company": 5,
+    "1_small": 10,
+    "2_small": 15,
+    "3_small": 20,
+    "4_small": 25,
+    "1_large": 40
+  },
+  "note": "Angka ini usulan simulasi terdahulu, tidak final. Konfirmasikan semua persentase dan modal sebelum digunakan sebagai default live."
+}

@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "RoomMetadata": {
+      "title": "RoomMetadata",
+      "description": "Metadata for an online Periodic Table Monopoly V2 Research Edition multiplayer room.",
+      "type": "object",
+      "properties": {
+        "roomCode": { "type": "string" },
+        "hostUid": { "type": "string" },
+        "edition": { "type": "string", "enum": ["research"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["roomCode", "hostUid", "updatedAt"]
+    },
+    "RoomGameState": {
+      "title": "RoomGameState",
+      "description": "Synchronized V2 Research Edition game state for online rooms.",
+      "type": "object",
+      "properties": {
+        "gameId": { "type": "string" },
+        "mode": { "type": "string", "enum": ["local", "online"] },
+        "roomCode": { "type": "string" },
+        "phase": { "type": "string" },
+        "activeTeamIndex": { "type": "integer" },
+        "stateVersion": { "type": "integer" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["gameId", "mode", "phase", "activeTeamIndex", "stateVersion", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/rooms_v2/{roomId}": {
+      "schema": { "$ref": "#/entities/RoomMetadata" },
+      "description": "V2 online game room header document (prefixed with v2_)."
+    },
+    "/rooms_v2/{roomId}/state/{stateId}": {
+      "schema": { "$ref": "#/entities/RoomGameState" },
+      "description": "Active serialized V2 game state document synced across room players."
+    }
+  }
+}

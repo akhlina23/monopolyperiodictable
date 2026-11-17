@@ -1,0 +1,6 @@
+{
+  "name": "Monopoly Periodic Table",
+  "description": "Game edukasi kimia berbasis Monopoly dengan 118 unsur tabel periodik, local & online multiplayer, serta kuis dan studi kasus AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

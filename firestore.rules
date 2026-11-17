@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidV2RoomId(id) {
+      return id is string && id.size() <= 128 && id.matches('^v2_[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /rooms_v2/{roomId} {
+      allow read: if isSignedIn() && isValidV2RoomId(roomId);
+      allow create: if isSignedIn() && isValidV2RoomId(roomId);
+      allow update: if isSignedIn() && isValidV2RoomId(roomId);
+
+      match /state/{stateId} {
+        allow read: if isSignedIn() && isValidV2RoomId(roomId) && isValidId(stateId);
+        allow create, update: if isSignedIn() && isValidV2RoomId(roomId) && isValidId(stateId);
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "water_processing",
+    "name": "Pengolah Air",
+    "draftPurchasePriceKK": 20000,
+    "draftBankTaxMaintenanceKK": 500,
+    "status": "PROPOSED_DRAFT"
+  },
+  {
+    "id": "power_plant",
+    "name": "Pembangkit Listrik",
+    "draftPurchasePriceKK": 20000,
+    "draftBankTaxMaintenanceKK": 500,
+    "status": "PROPOSED_DRAFT"
+  },
+  {
+    "id": "transport",
+    "name": "Transportasi",
+    "draftPurchasePriceKK": 20000,
+    "draftBankTaxMaintenanceKK": 500,
+    "status": "PROPOSED_DRAFT"
+  },
+  {
+    "id": "mining",
+    "name": "Pertambangan",
+    "draftPurchasePriceKK": 20000,
+    "draftBankTaxMaintenanceKK": 500,
+    "status": "PROPOSED_DRAFT"
+  }
+]

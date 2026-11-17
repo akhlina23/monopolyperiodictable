@@ -1,0 +1,68 @@
+{
+  "currency": "KK",
+  "startingCapitalKK": 100000,
+  "startingCapitalStatus": "DRAFT_CONFIGURABLE",
+  "elementPricing": {
+    "multiplierPerRoundedMass": 100,
+    "minimumPrice": 500,
+    "auctionRate": 0.7,
+    "auctionRoundingUnit": 100,
+    "status": "APPROVED_FROM_MASTER_JSON"
+  },
+  "rent": {
+    "baseRentRate": 0.075,
+    "roundingUnit": 10,
+    "minimumRent": 10,
+    "multipliers": {
+      "noCompany": 1,
+      "completeSet": 2,
+      "oneSmallCompany": 5,
+      "twoSmallCompanies": 15,
+      "threeSmallCompanies": 43,
+      "fourSmallCompanies": 60,
+      "bigCompany": 75
+    },
+    "propertySetBonusEnabled": false,
+    "propertySetBonusStatus": "DRAFT_DISABLED_BY_DEFAULT"
+  },
+  "construction": {
+    "smallCompanyCostRate": 0.6666666666666666,
+    "minimumSmallCompanyCost": 300,
+    "roundingUnit": 100,
+    "bigCompanyUpgradeCostUnits": 1,
+    "maximumSmallCompanies": 4,
+    "status": "APPROVED_TITLE_DEED_RATIO"
+  },
+  "businessIncome": {
+    "noCompany": 0,
+    "oneSmallCompany": 1.2,
+    "twoSmallCompanies": 1.4,
+    "threeSmallCompanies": 1.6,
+    "fourSmallCompanies": 1.8,
+    "bigCompany": 2.0,
+    "fixedStartSalary": 0,
+    "calculationBase": "oneSmallCompanyCost",
+    "status": "APPROVED_V3_120_TO_200_PERCENT"
+  },
+  "maintenance": {
+    "ownPropertyMultiplier": 2,
+    "radiusRuleEnabled": false,
+    "radiusRuleStatus": "DRAFT_DISABLED_PENDING_GROUP_CONSENSUS",
+    "insolvencyRule": "destroy_companies",
+    "insolvencyRuleStatus": "DRAFT_CONFIGURABLE"
+  },
+  "mainPropertyRules": {
+    "bankChargeDraftKK": 500,
+    "ownerFeeBaseKK": 500,
+    "multipliersByCount": [1, 2, 4, 8],
+    "status": "DRAFT_CONFIGURABLE"
+  },
+  "educationalRewards": {
+    "quizRewardKK": 2500,
+    "studyCaseRewardKK": 10000,
+    "jailBailKK": 20000,
+    "jailDurationTurns": 3,
+    "skipNextIncomeOnQuizFail": false,
+    "rewardsStatus": "APPROVED_JAIL_BAIL_20000"
+  }
+}

@@ -1,0 +1,1156 @@
+[
+  {
+    "tileId": "corner-start",
+    "pathIndex": 0,
+    "tileType": "start",
+    "title": "START",
+    "corner": "start",
+    "side": "top"
+  },
+  {
+    "tileId": "element-H",
+    "pathIndex": 1,
+    "tileType": "element",
+    "title": "H — Hidrogen",
+    "atomicNumber": 1,
+    "elementSymbol": "H",
+    "side": "top"
+  },
+  {
+    "tileId": "element-He",
+    "pathIndex": 2,
+    "tileType": "element",
+    "title": "He — Helium",
+    "atomicNumber": 2,
+    "elementSymbol": "He",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Li",
+    "pathIndex": 3,
+    "tileType": "element",
+    "title": "Li — Litium",
+    "atomicNumber": 3,
+    "elementSymbol": "Li",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Be",
+    "pathIndex": 4,
+    "tileType": "element",
+    "title": "Be — Berilium",
+    "atomicNumber": 4,
+    "elementSymbol": "Be",
+    "side": "top"
+  },
+  {
+    "tileId": "element-B",
+    "pathIndex": 5,
+    "tileType": "element",
+    "title": "B — Boron",
+    "atomicNumber": 5,
+    "elementSymbol": "B",
+    "side": "top"
+  },
+  {
+    "tileId": "element-C",
+    "pathIndex": 6,
+    "tileType": "element",
+    "title": "C — Karbon",
+    "atomicNumber": 6,
+    "elementSymbol": "C",
+    "side": "top"
+  },
+  {
+    "tileId": "element-N",
+    "pathIndex": 7,
+    "tileType": "element",
+    "title": "N — Nitrogen",
+    "atomicNumber": 7,
+    "elementSymbol": "N",
+    "side": "top"
+  },
+  {
+    "tileId": "main-water",
+    "pathIndex": 8,
+    "tileType": "main_property",
+    "title": "Pengolah Air",
+    "mainPropertyId": "water_processing",
+    "side": "top"
+  },
+  {
+    "tileId": "element-O",
+    "pathIndex": 9,
+    "tileType": "element",
+    "title": "O — Oksigen",
+    "atomicNumber": 8,
+    "elementSymbol": "O",
+    "side": "top"
+  },
+  {
+    "tileId": "element-F",
+    "pathIndex": 10,
+    "tileType": "element",
+    "title": "F — Fluorin",
+    "atomicNumber": 9,
+    "elementSymbol": "F",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Ne",
+    "pathIndex": 11,
+    "tileType": "element",
+    "title": "Ne — Neon",
+    "atomicNumber": 10,
+    "elementSymbol": "Ne",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Na",
+    "pathIndex": 12,
+    "tileType": "element",
+    "title": "Na — Natrium",
+    "atomicNumber": 11,
+    "elementSymbol": "Na",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Mg",
+    "pathIndex": 13,
+    "tileType": "element",
+    "title": "Mg — Magnesium",
+    "atomicNumber": 12,
+    "elementSymbol": "Mg",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Al",
+    "pathIndex": 14,
+    "tileType": "element",
+    "title": "Al — Aluminium",
+    "atomicNumber": 13,
+    "elementSymbol": "Al",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Si",
+    "pathIndex": 15,
+    "tileType": "element",
+    "title": "Si — Silikon",
+    "atomicNumber": 14,
+    "elementSymbol": "Si",
+    "side": "top"
+  },
+  {
+    "tileId": "study-case-1",
+    "pathIndex": 16,
+    "tileType": "study_case",
+    "title": "Studi Kasus 1",
+    "side": "top"
+  },
+  {
+    "tileId": "element-P",
+    "pathIndex": 17,
+    "tileType": "element",
+    "title": "P — Fosfor",
+    "atomicNumber": 15,
+    "elementSymbol": "P",
+    "side": "top"
+  },
+  {
+    "tileId": "element-S",
+    "pathIndex": 18,
+    "tileType": "element",
+    "title": "S — Belerang",
+    "atomicNumber": 16,
+    "elementSymbol": "S",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Cl",
+    "pathIndex": 19,
+    "tileType": "element",
+    "title": "Cl — Klorin",
+    "atomicNumber": 17,
+    "elementSymbol": "Cl",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Ar",
+    "pathIndex": 20,
+    "tileType": "element",
+    "title": "Ar — Argon",
+    "atomicNumber": 18,
+    "elementSymbol": "Ar",
+    "side": "top"
+  },
+  {
+    "tileId": "element-K",
+    "pathIndex": 21,
+    "tileType": "element",
+    "title": "K — Kalium",
+    "atomicNumber": 19,
+    "elementSymbol": "K",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Ca",
+    "pathIndex": 22,
+    "tileType": "element",
+    "title": "Ca — Kalsium",
+    "atomicNumber": 20,
+    "elementSymbol": "Ca",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Sc",
+    "pathIndex": 23,
+    "tileType": "element",
+    "title": "Sc — Skandium",
+    "atomicNumber": 21,
+    "elementSymbol": "Sc",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Ti",
+    "pathIndex": 24,
+    "tileType": "element",
+    "title": "Ti — Titanium",
+    "atomicNumber": 22,
+    "elementSymbol": "Ti",
+    "side": "top"
+  },
+  {
+    "tileId": "element-V",
+    "pathIndex": 25,
+    "tileType": "element",
+    "title": "V — Vanadium",
+    "atomicNumber": 23,
+    "elementSymbol": "V",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Cr",
+    "pathIndex": 26,
+    "tileType": "element",
+    "title": "Cr — Kromium",
+    "atomicNumber": 24,
+    "elementSymbol": "Cr",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Mn",
+    "pathIndex": 27,
+    "tileType": "element",
+    "title": "Mn — Mangan",
+    "atomicNumber": 25,
+    "elementSymbol": "Mn",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Fe",
+    "pathIndex": 28,
+    "tileType": "element",
+    "title": "Fe — Besi",
+    "atomicNumber": 26,
+    "elementSymbol": "Fe",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Co",
+    "pathIndex": 29,
+    "tileType": "element",
+    "title": "Co — Kobalt",
+    "atomicNumber": 27,
+    "elementSymbol": "Co",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Ni",
+    "pathIndex": 30,
+    "tileType": "element",
+    "title": "Ni — Nikel",
+    "atomicNumber": 28,
+    "elementSymbol": "Ni",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Cu",
+    "pathIndex": 31,
+    "tileType": "element",
+    "title": "Cu — Tembaga",
+    "atomicNumber": 29,
+    "elementSymbol": "Cu",
+    "side": "top"
+  },
+  {
+    "tileId": "element-Zn",
+    "pathIndex": 32,
+    "tileType": "element",
+    "title": "Zn — Seng",
+    "atomicNumber": 30,
+    "elementSymbol": "Zn",
+    "side": "top"
+  },
+  {
+    "tileId": "corner-jail",
+    "pathIndex": 33,
+    "tileType": "jail",
+    "title": "PENJARA",
+    "corner": "jail",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Ga",
+    "pathIndex": 34,
+    "tileType": "element",
+    "title": "Ga — Galium",
+    "atomicNumber": 31,
+    "elementSymbol": "Ga",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Ge",
+    "pathIndex": 35,
+    "tileType": "element",
+    "title": "Ge — Germanium",
+    "atomicNumber": 32,
+    "elementSymbol": "Ge",
+    "side": "right"
+  },
+  {
+    "tileId": "element-As",
+    "pathIndex": 36,
+    "tileType": "element",
+    "title": "As — Arsen",
+    "atomicNumber": 33,
+    "elementSymbol": "As",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Se",
+    "pathIndex": 37,
+    "tileType": "element",
+    "title": "Se — Selenium",
+    "atomicNumber": 34,
+    "elementSymbol": "Se",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Br",
+    "pathIndex": 38,
+    "tileType": "element",
+    "title": "Br — Bromin",
+    "atomicNumber": 35,
+    "elementSymbol": "Br",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Kr",
+    "pathIndex": 39,
+    "tileType": "element",
+    "title": "Kr — Kripton",
+    "atomicNumber": 36,
+    "elementSymbol": "Kr",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Rb",
+    "pathIndex": 40,
+    "tileType": "element",
+    "title": "Rb — Rubidium",
+    "atomicNumber": 37,
+    "elementSymbol": "Rb",
+    "side": "right"
+  },
+  {
+    "tileId": "main-power",
+    "pathIndex": 41,
+    "tileType": "main_property",
+    "title": "Pembangkit Listrik",
+    "mainPropertyId": "power_plant",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Sr",
+    "pathIndex": 42,
+    "tileType": "element",
+    "title": "Sr — Stronsium",
+    "atomicNumber": 38,
+    "elementSymbol": "Sr",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Y",
+    "pathIndex": 43,
+    "tileType": "element",
+    "title": "Y — Itrium",
+    "atomicNumber": 39,
+    "elementSymbol": "Y",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Zr",
+    "pathIndex": 44,
+    "tileType": "element",
+    "title": "Zr — Zirkonium",
+    "atomicNumber": 40,
+    "elementSymbol": "Zr",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Nb",
+    "pathIndex": 45,
+    "tileType": "element",
+    "title": "Nb — Niobium",
+    "atomicNumber": 41,
+    "elementSymbol": "Nb",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Mo",
+    "pathIndex": 46,
+    "tileType": "element",
+    "title": "Mo — Molibdenum",
+    "atomicNumber": 42,
+    "elementSymbol": "Mo",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Tc",
+    "pathIndex": 47,
+    "tileType": "element",
+    "title": "Tc — Teknesium",
+    "atomicNumber": 43,
+    "elementSymbol": "Tc",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Ru",
+    "pathIndex": 48,
+    "tileType": "element",
+    "title": "Ru — Rutenium",
+    "atomicNumber": 44,
+    "elementSymbol": "Ru",
+    "side": "right"
+  },
+  {
+    "tileId": "quiz-1",
+    "pathIndex": 49,
+    "tileType": "quiz",
+    "title": "Flashcard Quiz 1",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Rh",
+    "pathIndex": 50,
+    "tileType": "element",
+    "title": "Rh — Rodium",
+    "atomicNumber": 45,
+    "elementSymbol": "Rh",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Pd",
+    "pathIndex": 51,
+    "tileType": "element",
+    "title": "Pd — Paladium",
+    "atomicNumber": 46,
+    "elementSymbol": "Pd",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Ag",
+    "pathIndex": 52,
+    "tileType": "element",
+    "title": "Ag — Perak",
+    "atomicNumber": 47,
+    "elementSymbol": "Ag",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Cd",
+    "pathIndex": 53,
+    "tileType": "element",
+    "title": "Cd — Kadmium",
+    "atomicNumber": 48,
+    "elementSymbol": "Cd",
+    "side": "right"
+  },
+  {
+    "tileId": "element-In",
+    "pathIndex": 54,
+    "tileType": "element",
+    "title": "In — Indium",
+    "atomicNumber": 49,
+    "elementSymbol": "In",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Sn",
+    "pathIndex": 55,
+    "tileType": "element",
+    "title": "Sn — Timah",
+    "atomicNumber": 50,
+    "elementSymbol": "Sn",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Sb",
+    "pathIndex": 56,
+    "tileType": "element",
+    "title": "Sb — Antimon",
+    "atomicNumber": 51,
+    "elementSymbol": "Sb",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Te",
+    "pathIndex": 57,
+    "tileType": "element",
+    "title": "Te — Telurium",
+    "atomicNumber": 52,
+    "elementSymbol": "Te",
+    "side": "right"
+  },
+  {
+    "tileId": "element-I",
+    "pathIndex": 58,
+    "tileType": "element",
+    "title": "I — Iodin",
+    "atomicNumber": 53,
+    "elementSymbol": "I",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Xe",
+    "pathIndex": 59,
+    "tileType": "element",
+    "title": "Xe — Xenon",
+    "atomicNumber": 54,
+    "elementSymbol": "Xe",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Cs",
+    "pathIndex": 60,
+    "tileType": "element",
+    "title": "Cs — Sesium",
+    "atomicNumber": 55,
+    "elementSymbol": "Cs",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Ba",
+    "pathIndex": 61,
+    "tileType": "element",
+    "title": "Ba — Barium",
+    "atomicNumber": 56,
+    "elementSymbol": "Ba",
+    "side": "right"
+  },
+  {
+    "tileId": "element-La",
+    "pathIndex": 62,
+    "tileType": "element",
+    "title": "La — Lantanum",
+    "atomicNumber": 57,
+    "elementSymbol": "La",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Ce",
+    "pathIndex": 63,
+    "tileType": "element",
+    "title": "Ce — Serium",
+    "atomicNumber": 58,
+    "elementSymbol": "Ce",
+    "side": "right"
+  },
+  {
+    "tileId": "element-Pr",
+    "pathIndex": 64,
+    "tileType": "element",
+    "title": "Pr — Praseodimium",
+    "atomicNumber": 59,
+    "elementSymbol": "Pr",
+    "side": "right"
+  },
+  {
+    "tileId": "corner-parking",
+    "pathIndex": 65,
+    "tileType": "parking",
+    "title": "PARKIR",
+    "corner": "parking",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Nd",
+    "pathIndex": 66,
+    "tileType": "element",
+    "title": "Nd — Neodimium",
+    "atomicNumber": 60,
+    "elementSymbol": "Nd",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Pm",
+    "pathIndex": 67,
+    "tileType": "element",
+    "title": "Pm — Prometium",
+    "atomicNumber": 61,
+    "elementSymbol": "Pm",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Sm",
+    "pathIndex": 68,
+    "tileType": "element",
+    "title": "Sm — Samarium",
+    "atomicNumber": 62,
+    "elementSymbol": "Sm",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Eu",
+    "pathIndex": 69,
+    "tileType": "element",
+    "title": "Eu — Europium",
+    "atomicNumber": 63,
+    "elementSymbol": "Eu",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Gd",
+    "pathIndex": 70,
+    "tileType": "element",
+    "title": "Gd — Gadolinium",
+    "atomicNumber": 64,
+    "elementSymbol": "Gd",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Tb",
+    "pathIndex": 71,
+    "tileType": "element",
+    "title": "Tb — Terbium",
+    "atomicNumber": 65,
+    "elementSymbol": "Tb",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Dy",
+    "pathIndex": 72,
+    "tileType": "element",
+    "title": "Dy — Disprosium",
+    "atomicNumber": 66,
+    "elementSymbol": "Dy",
+    "side": "bottom"
+  },
+  {
+    "tileId": "main-transport",
+    "pathIndex": 73,
+    "tileType": "main_property",
+    "title": "Transportasi",
+    "mainPropertyId": "transport",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Ho",
+    "pathIndex": 74,
+    "tileType": "element",
+    "title": "Ho — Holmium",
+    "atomicNumber": 67,
+    "elementSymbol": "Ho",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Er",
+    "pathIndex": 75,
+    "tileType": "element",
+    "title": "Er — Erbium",
+    "atomicNumber": 68,
+    "elementSymbol": "Er",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Tm",
+    "pathIndex": 76,
+    "tileType": "element",
+    "title": "Tm — Tulium",
+    "atomicNumber": 69,
+    "elementSymbol": "Tm",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Yb",
+    "pathIndex": 77,
+    "tileType": "element",
+    "title": "Yb — Iterbium",
+    "atomicNumber": 70,
+    "elementSymbol": "Yb",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Lu",
+    "pathIndex": 78,
+    "tileType": "element",
+    "title": "Lu — Lutesium",
+    "atomicNumber": 71,
+    "elementSymbol": "Lu",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Hf",
+    "pathIndex": 79,
+    "tileType": "element",
+    "title": "Hf — Hafnium",
+    "atomicNumber": 72,
+    "elementSymbol": "Hf",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Ta",
+    "pathIndex": 80,
+    "tileType": "element",
+    "title": "Ta — Tantalum",
+    "atomicNumber": 73,
+    "elementSymbol": "Ta",
+    "side": "bottom"
+  },
+  {
+    "tileId": "study-case-2",
+    "pathIndex": 81,
+    "tileType": "study_case",
+    "title": "Studi Kasus 2",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-W",
+    "pathIndex": 82,
+    "tileType": "element",
+    "title": "W — Wolfram",
+    "atomicNumber": 74,
+    "elementSymbol": "W",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Re",
+    "pathIndex": 83,
+    "tileType": "element",
+    "title": "Re — Renium",
+    "atomicNumber": 75,
+    "elementSymbol": "Re",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Os",
+    "pathIndex": 84,
+    "tileType": "element",
+    "title": "Os — Osmium",
+    "atomicNumber": 76,
+    "elementSymbol": "Os",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Ir",
+    "pathIndex": 85,
+    "tileType": "element",
+    "title": "Ir — Iridium",
+    "atomicNumber": 77,
+    "elementSymbol": "Ir",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Pt",
+    "pathIndex": 86,
+    "tileType": "element",
+    "title": "Pt — Platina",
+    "atomicNumber": 78,
+    "elementSymbol": "Pt",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Au",
+    "pathIndex": 87,
+    "tileType": "element",
+    "title": "Au — Emas",
+    "atomicNumber": 79,
+    "elementSymbol": "Au",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Hg",
+    "pathIndex": 88,
+    "tileType": "element",
+    "title": "Hg — Raksa",
+    "atomicNumber": 80,
+    "elementSymbol": "Hg",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Tl",
+    "pathIndex": 89,
+    "tileType": "element",
+    "title": "Tl — Talium",
+    "atomicNumber": 81,
+    "elementSymbol": "Tl",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Pb",
+    "pathIndex": 90,
+    "tileType": "element",
+    "title": "Pb — Timbal",
+    "atomicNumber": 82,
+    "elementSymbol": "Pb",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Bi",
+    "pathIndex": 91,
+    "tileType": "element",
+    "title": "Bi — Bismut",
+    "atomicNumber": 83,
+    "elementSymbol": "Bi",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Po",
+    "pathIndex": 92,
+    "tileType": "element",
+    "title": "Po — Polonium",
+    "atomicNumber": 84,
+    "elementSymbol": "Po",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-At",
+    "pathIndex": 93,
+    "tileType": "element",
+    "title": "At — Astatin",
+    "atomicNumber": 85,
+    "elementSymbol": "At",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Rn",
+    "pathIndex": 94,
+    "tileType": "element",
+    "title": "Rn — Radon",
+    "atomicNumber": 86,
+    "elementSymbol": "Rn",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Fr",
+    "pathIndex": 95,
+    "tileType": "element",
+    "title": "Fr — Fransium",
+    "atomicNumber": 87,
+    "elementSymbol": "Fr",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Ra",
+    "pathIndex": 96,
+    "tileType": "element",
+    "title": "Ra — Radium",
+    "atomicNumber": 88,
+    "elementSymbol": "Ra",
+    "side": "bottom"
+  },
+  {
+    "tileId": "element-Ac",
+    "pathIndex": 97,
+    "tileType": "element",
+    "title": "Ac — Aktinium",
+    "atomicNumber": 89,
+    "elementSymbol": "Ac",
+    "side": "bottom"
+  },
+  {
+    "tileId": "corner-customs",
+    "pathIndex": 98,
+    "tileType": "customs",
+    "title": "BEA CUKAI",
+    "corner": "customs",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Th",
+    "pathIndex": 99,
+    "tileType": "element",
+    "title": "Th — Torium",
+    "atomicNumber": 90,
+    "elementSymbol": "Th",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Pa",
+    "pathIndex": 100,
+    "tileType": "element",
+    "title": "Pa — Protaktinium",
+    "atomicNumber": 91,
+    "elementSymbol": "Pa",
+    "side": "left"
+  },
+  {
+    "tileId": "element-U",
+    "pathIndex": 101,
+    "tileType": "element",
+    "title": "U — Uranium",
+    "atomicNumber": 92,
+    "elementSymbol": "U",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Np",
+    "pathIndex": 102,
+    "tileType": "element",
+    "title": "Np — Neptunium",
+    "atomicNumber": 93,
+    "elementSymbol": "Np",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Pu",
+    "pathIndex": 103,
+    "tileType": "element",
+    "title": "Pu — Plutonium",
+    "atomicNumber": 94,
+    "elementSymbol": "Pu",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Am",
+    "pathIndex": 104,
+    "tileType": "element",
+    "title": "Am — Amerisium",
+    "atomicNumber": 95,
+    "elementSymbol": "Am",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Cm",
+    "pathIndex": 105,
+    "tileType": "element",
+    "title": "Cm — Kurium",
+    "atomicNumber": 96,
+    "elementSymbol": "Cm",
+    "side": "left"
+  },
+  {
+    "tileId": "main-mining",
+    "pathIndex": 106,
+    "tileType": "main_property",
+    "title": "Pertambangan",
+    "mainPropertyId": "mining",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Bk",
+    "pathIndex": 107,
+    "tileType": "element",
+    "title": "Bk — Berkelium",
+    "atomicNumber": 97,
+    "elementSymbol": "Bk",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Cf",
+    "pathIndex": 108,
+    "tileType": "element",
+    "title": "Cf — Kalifornium",
+    "atomicNumber": 98,
+    "elementSymbol": "Cf",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Es",
+    "pathIndex": 109,
+    "tileType": "element",
+    "title": "Es — Einsteinium",
+    "atomicNumber": 99,
+    "elementSymbol": "Es",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Fm",
+    "pathIndex": 110,
+    "tileType": "element",
+    "title": "Fm — Fermium",
+    "atomicNumber": 100,
+    "elementSymbol": "Fm",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Md",
+    "pathIndex": 111,
+    "tileType": "element",
+    "title": "Md — Mendelevium",
+    "atomicNumber": 101,
+    "elementSymbol": "Md",
+    "side": "left"
+  },
+  {
+    "tileId": "element-No",
+    "pathIndex": 112,
+    "tileType": "element",
+    "title": "No — Nobelium",
+    "atomicNumber": 102,
+    "elementSymbol": "No",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Lr",
+    "pathIndex": 113,
+    "tileType": "element",
+    "title": "Lr — Lawrensium",
+    "atomicNumber": 103,
+    "elementSymbol": "Lr",
+    "side": "left"
+  },
+  {
+    "tileId": "quiz-2",
+    "pathIndex": 114,
+    "tileType": "quiz",
+    "title": "Flashcard Quiz 2",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Rf",
+    "pathIndex": 115,
+    "tileType": "element",
+    "title": "Rf — Rutherfordium",
+    "atomicNumber": 104,
+    "elementSymbol": "Rf",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Db",
+    "pathIndex": 116,
+    "tileType": "element",
+    "title": "Db — Dubnium",
+    "atomicNumber": 105,
+    "elementSymbol": "Db",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Sg",
+    "pathIndex": 117,
+    "tileType": "element",
+    "title": "Sg — Seaborgium",
+    "atomicNumber": 106,
+    "elementSymbol": "Sg",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Bh",
+    "pathIndex": 118,
+    "tileType": "element",
+    "title": "Bh — Bohrium",
+    "atomicNumber": 107,
+    "elementSymbol": "Bh",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Hs",
+    "pathIndex": 119,
+    "tileType": "element",
+    "title": "Hs — Hassium",
+    "atomicNumber": 108,
+    "elementSymbol": "Hs",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Mt",
+    "pathIndex": 120,
+    "tileType": "element",
+    "title": "Mt — Meitnerium",
+    "atomicNumber": 109,
+    "elementSymbol": "Mt",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Ds",
+    "pathIndex": 121,
+    "tileType": "element",
+    "title": "Ds — Darmstadtium",
+    "atomicNumber": 110,
+    "elementSymbol": "Ds",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Rg",
+    "pathIndex": 122,
+    "tileType": "element",
+    "title": "Rg — Roentgenium",
+    "atomicNumber": 111,
+    "elementSymbol": "Rg",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Cn",
+    "pathIndex": 123,
+    "tileType": "element",
+    "title": "Cn — Kopernisium",
+    "atomicNumber": 112,
+    "elementSymbol": "Cn",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Nh",
+    "pathIndex": 124,
+    "tileType": "element",
+    "title": "Nh — Nihonium",
+    "atomicNumber": 113,
+    "elementSymbol": "Nh",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Fl",
+    "pathIndex": 125,
+    "tileType": "element",
+    "title": "Fl — Flerovium",
+    "atomicNumber": 114,
+    "elementSymbol": "Fl",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Mc",
+    "pathIndex": 126,
+    "tileType": "element",
+    "title": "Mc — Moskovium",
+    "atomicNumber": 115,
+    "elementSymbol": "Mc",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Lv",
+    "pathIndex": 127,
+    "tileType": "element",
+    "title": "Lv — Livermorium",
+    "atomicNumber": 116,
+    "elementSymbol": "Lv",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Ts",
+    "pathIndex": 128,
+    "tileType": "element",
+    "title": "Ts — Tenesin",
+    "atomicNumber": 117,
+    "elementSymbol": "Ts",
+    "side": "left"
+  },
+  {
+    "tileId": "element-Og",
+    "pathIndex": 129,
+    "tileType": "element",
+    "title": "Og — Oganeson",
+    "atomicNumber": 118,
+    "elementSymbol": "Og",
+    "side": "left"
+  }
+]
