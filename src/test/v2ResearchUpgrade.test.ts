@@ -22,6 +22,12 @@ import {
   getIsotopesForElement,
   getMostAbundantNuclide,
 } from '../data/isotopes';
+import { getElementDossier } from '../data/elementDossier';
+import {
+  buildNucleusCluster3D,
+  evaluateSignedSphericalHarmonic,
+  sampleQuantumProbabilityCloud,
+} from '../utils/quantumWavefunctions';
 import { COMPOUNDS_DATABASE } from '../data/compounds';
 import {
   COMPOUND_STRUCTURES,
@@ -316,3 +322,78 @@ describe('V2 3D Compound Geometry & Stoichiometry Verification', () => {
     expect(kCounts.O).toBe(kCounts.K * 4);
   });
 });
+
+describe('V2 3D Electron Lab: Packed Nucleons, Quantum Wavefunctions & 118-Element Dossier', () => {
+  it('packs mass-accurate 3D proton/neutron clusters cleanly inside the 1s shell for all 118 elements', () => {
+    const hCluster = buildNucleusCluster3D(1, 0);
+    expect(hCluster.particles).toHaveLength(1);
+    expect(hCluster.particles[0].kind).toBe('p');
+
+    const clCluster = buildNucleusCluster3D(17, 18);
+    expect(clCluster.particles.filter((p) => p.kind === 'p')).toHaveLength(17);
+    expect(clCluster.particles.filter((p) => p.kind === 'n')).toHaveLength(18);
+    expect(clCluster.outerRadius).toBeLessThan(0.5);
+
+    ELEMENTS_LIST.forEach((el) => {
+      const nCount = Math.max(0, Math.round(el.massValueForPricing) - el.atomicNumber);
+      const cluster = buildNucleusCluster3D(el.atomicNumber, nCount);
+      expect(cluster.particles.filter((p) => p.kind === 'p')).toHaveLength(el.atomicNumber);
+      expect(cluster.particles.filter((p) => p.kind === 'n')).toHaveLength(nCount);
+      // Innermost Bohr 1s shell is r = 0.82
+      expect(cluster.outerRadius).toBeLessThan(0.5);
+
+      // Verify full 360-degree spherical symmetry (centroid near origin, no crescent gap)
+      const totalA = cluster.particles.length;
+      const meanX = cluster.particles.reduce((s, p) => s + p.x, 0) / totalA;
+      const meanY = cluster.particles.reduce((s, p) => s + p.y, 0) / totalA;
+      const meanZ = cluster.particles.reduce((s, p) => s + p.z, 0) / totalA;
+      expect(Math.hypot(meanX, meanY, meanZ)).toBeLessThan(0.05);
+
+      if (totalA >= 12) {
+        expect(cluster.particles.some((p) => p.x > 0.05)).toBe(true);
+        expect(cluster.particles.some((p) => p.x < -0.05)).toBe(true);
+        expect(cluster.particles.some((p) => p.y > 0.05)).toBe(true);
+        expect(cluster.particles.some((p) => p.y < -0.05)).toBe(true);
+        expect(cluster.particles.some((p) => p.z > 0.05)).toBe(true);
+        expect(cluster.particles.some((p) => p.z < -0.05)).toBe(true);
+      }
+    });
+  });
+
+  it('evaluates signed spherical harmonics and dense 6,000+ Monte Carlo probability clouds', () => {
+    // 2p_z: positive along +y (theta=0), negative along -y (theta=pi)
+    expect(evaluateSignedSphericalHarmonic(1, 0, 0, 0)).toBeGreaterThan(0.5);
+    expect(evaluateSignedSphericalHarmonic(1, 0, Math.PI, 0)).toBeLessThan(-0.5);
+
+    // 4f_{m=1} has both positive and negative lobes across hemispheres
+    expect(evaluateSignedSphericalHarmonic(3, 1, Math.PI / 4, 0)).toBeGreaterThan(0);
+    expect(evaluateSignedSphericalHarmonic(3, 1, Math.PI / 4, Math.PI)).toBeLessThan(0);
+
+    const cloud = sampleQuantumProbabilityCloud(3, 2, 0, 8500);
+    expect(cloud.count).toBeGreaterThanOrEqual(6000);
+    expect(cloud.positions.length).toBe(cloud.count * 3);
+    expect(cloud.colors.length).toBe(cloud.count * 3);
+    for (let i = 0; i < 60; i++) {
+      expect(Number.isFinite(cloud.positions[i])).toBe(true);
+    }
+  });
+
+  it('provides complete bilingual (ID & EN) discovery, applications, and trivia dossier for all 118 elements', () => {
+    for (let z = 1; z <= 118; z++) {
+      const entry = getElementDossier(z);
+      expect(entry).not.toBeNull();
+      expect(entry!.history.id.trim().length).toBeGreaterThan(20);
+      expect(entry!.history.en.trim().length).toBeGreaterThan(20);
+      expect(entry!.applications.id.trim().length).toBeGreaterThan(20);
+      expect(entry!.applications.en.trim().length).toBeGreaterThan(20);
+      expect(entry!.funFact.id.trim().length).toBeGreaterThan(20);
+      expect(entry!.funFact.en.trim().length).toBeGreaterThan(20);
+    }
+
+    // Chlorine bertholite check
+    const cl = getElementDossier(17)!;
+    expect(cl.funFact.id.toLowerCase()).toContain('bertholite');
+    expect(cl.funFact.en.toLowerCase()).toContain('bertholite');
+  });
+});
+

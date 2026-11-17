@@ -17,6 +17,8 @@ import {
 } from '../data/categories';
 import { convertCelsiusToUnit, convertUnitToCelsius } from '../data/elements';
 import { ElementInspectorPanel } from './element-panel/ElementInspectorPanel';
+import { ElementDossierSection } from './element-panel/ElementDossierSection';
+import { DossierLanguage } from '../data/elementDossier';
 import { OrbitalVisualizer3D } from './electron-visualization/OrbitalVisualizer3D';
 import { IsotopeViewer } from './isotope-viewer/IsotopeViewer';
 import { CompoundExplorer } from './compound-explorer/CompoundExplorer';
@@ -66,6 +68,7 @@ export const PeriodicTableExplorer: React.FC<PeriodicTableExplorerProps> = ({
   const [blockFilter, setBlockFilter] = useState<string>('all');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [heatmapMetric, setHeatmapMetric] = useState<HeatmapMetric>('none');
+  const [dossierLang, setDossierLang] = useState<DossierLanguage>('id');
 
   const { gridMap, lanthanides, actinides } = useMemo(() => {
     const map: Record<string, ChemicalElement> = {};
@@ -439,9 +442,10 @@ export const PeriodicTableExplorer: React.FC<PeriodicTableExplorerProps> = ({
 
       {/* Main Tab Body */}
       {activeTab === 'properties' && (
-        <div className="flex-1 flex flex-col xl:flex-row gap-3 min-h-0">
-          {/* Left Dedicated Element Inspector */}
-          <div className="w-full xl:w-64 shrink-0">
+        <div className="flex-1 flex flex-col gap-3 min-h-0">
+          <div className="flex-1 flex flex-col xl:flex-row gap-3 min-h-0">
+            {/* Left Dedicated Element Inspector */}
+            <div className="w-full xl:w-64 shrink-0">
             <ElementInspectorPanel
               element={displayEl}
               temperatureC={temperatureC}
@@ -570,12 +574,24 @@ export const PeriodicTableExplorer: React.FC<PeriodicTableExplorerProps> = ({
               )}
             </div>
           </div>
+          </div>
+
+          <ElementDossierSection
+            element={displayEl}
+            language={dossierLang}
+            onLanguageChange={setDossierLang}
+          />
         </div>
       )}
 
       {activeTab === 'electrons' && (
-        <div className="flex-1 min-h-[420px]">
+        <div className="flex-1 flex flex-col gap-3 min-h-[420px]">
           <OrbitalVisualizer3D element={selectedElement} />
+          <ElementDossierSection
+            element={selectedElement}
+            language={dossierLang}
+            onLanguageChange={setDossierLang}
+          />
         </div>
       )}
 
